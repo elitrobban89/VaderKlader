@@ -6,7 +6,7 @@
  * Author: elitrobban.se
  */
 
-define('VADER_KLADER_API_URL', 'https://vaderklader-production.up.railway.app/api/weather-outfit');
+define('VADER_KLADER_API_URL', 'https://vaderklader-1.onrender.com/api/weather-outfit');
 
 function vader_klader_shortcode() {
     ob_start(); ?>
@@ -61,19 +61,19 @@ function vader_klader_shortcode() {
         <!-- Resultat -->
         <div id="vk-result" style="display:none;">
             <div id="vk-weather-box" style="
-                background:#f0f8ff; border-left:4px solid #2196F3;
+                background:#1a3a5c; border-left:4px solid #64b5f6;
                 padding:16px; border-radius:6px; margin-bottom:12px;">
-                <h3 style="margin:0 0 8px 0; color:#1565C0;">🌡 Väder just nu</h3>
-                <p style="margin:4px 0;"><strong>Temperatur:</strong> <span id="vk-temp"></span>°C</p>
-                <p style="margin:4px 0;"><strong>Vind:</strong> <span id="vk-wind"></span> m/s</p>
-                <p style="margin:4px 0;"><strong>Luftfuktighet:</strong> <span id="vk-humidity"></span>%</p>
-                <p style="margin:4px 0;"><strong>Nederbörd:</strong> <span id="vk-precip"></span></p>
+                <h3 style="margin:0 0 8px 0; color:#90caf9;">🌡 Väder just nu</h3>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="vk-temp"></span>°C</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="vk-wind"></span> m/s</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="vk-humidity"></span>%</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="vk-precip"></span></p>
             </div>
             <div id="vk-outfit-box" style="
-                background:#fff8e1; border-left:4px solid #FFC107;
+                background:#3a2a00; border-left:4px solid #FFC107;
                 padding:16px; border-radius:6px;">
-                <h3 style="margin:0 0 8px 0; color:#F57F17;">👗 AI-klädförslag (<span id="vk-transport-label"></span>)</h3>
-                <p id="vk-outfit" style="margin:0; line-height:1.6;"></p>
+                <h3 style="margin:0 0 8px 0; color:#FFD54F;">👗 AI-klädförslag (<span id="vk-transport-label"></span>)</h3>
+                <p id="vk-outfit" style="margin:0; line-height:1.6; color:#fff8e1;"></p>
             </div>
             <button onclick="vkReset()" style="
                 margin-top:14px; background:none; border:1px solid #aaa;
