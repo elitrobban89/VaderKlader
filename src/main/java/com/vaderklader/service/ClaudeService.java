@@ -13,13 +13,11 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class ClaudeService {
 
-    private static final String CLAUDE_URL = "https://api.anthropic.com/v1/messages";
+    private static final String GEMINI_URL =
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=";
 
-    @Value("${claude.api.key}")
+    @Value("${gemini.api.key}")
     private String apiKey;
-
-    @Value("${claude.model}")
-    private String model;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -29,27 +27,22 @@ public class ClaudeService {
 
         try {
             ObjectNode body = objectMapper.createObjectNode();
-            body.put("model", model);
-            body.put("max_tokens", 400);
-
-            ArrayNode messages = body.putArray("messages");
-            ObjectNode message = messages.addObject();
-            message.put("role", "user");
-            message.put("content", prompt);
+            ArrayNode contents = body.putArray("contents");
+            ObjectNode content = contents.addObject();
+            ArrayNode parts = content.putArray("parts");
+            parts.addObject().put("text", prompt);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("x-api-key", apiKey);
-            headers.set("anthropic-version", "2023-06-01");
 
             HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(CLAUDE_URL, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(GEMINI_URL + apiKey, request, String.class);
 
             JsonNode responseJson = objectMapper.readTree(response.getBody());
-            return responseJson.get("content").get(0).get("text").asText();
+            return responseJson.get("candidates").get(0).get("content").get("parts").get(0).get("text").asText();
 
         } catch (Exception e) {
-            throw new RuntimeException("Kunde inte hämta klädförslag från Claude: " + e.getMessage());
+            throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
         }
     }
 
