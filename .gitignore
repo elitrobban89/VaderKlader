@@ -2,3 +2,8 @@ target/
 *.class
 *.jar
 .env
+run.bat
+.idea/
+wordpress/vader-klader/
+wordpress/vader-klader.zip
+

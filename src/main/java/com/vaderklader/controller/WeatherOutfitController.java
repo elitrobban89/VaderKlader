@@ -22,10 +22,11 @@ public class WeatherOutfitController {
     @GetMapping("/weather-outfit")
     public ResponseEntity<?> getWeatherOutfit(
             @RequestParam double lat,
-            @RequestParam double lon) {
+            @RequestParam double lon,
+            @RequestParam(required = false, defaultValue = "okänt") String transport) {
         try {
             WeatherData weather = smhiService.getWeather(lat, lon);
-            String suggestion = claudeService.getOutfitSuggestion(weather);
+            String suggestion = claudeService.getOutfitSuggestion(weather, transport);
             return ResponseEntity.ok(new WeatherOutfitResponse(lat, lon, weather, suggestion));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("{\"error\": \"" + e.getMessage() + "\"}");

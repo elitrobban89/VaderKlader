@@ -9,44 +9,47 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class SmhiService {
 
-    private static final String SMHI_URL =
-        "https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/%s/lat/%s/data.json";
+    private static final String OPEN_METEO_URL =
+        "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,wind_speed_10m,relative_humidity_2m,precipitation,weather_code";
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public WeatherData getWeather(double lat, double lon) {
-        String url = String.format(SMHI_URL,
-            String.format("%.4f", lon).replace(",", "."),
-            String.format("%.4f", lat).replace(",", "."));
+        String url = String.format(OPEN_METEO_URL,
+            String.valueOf(lat).replace(",", "."),
+            String.valueOf(lon).replace(",", "."));
 
         try {
             String json = restTemplate.getForObject(url, String.class);
-            return parseSmhiResponse(json);
+            return parseResponse(json);
         } catch (Exception e) {
-            throw new RuntimeException("Kunde inte hämta väderdata från SMHI: " + e.getMessage());
+            throw new RuntimeException("Kunde inte hämta väderdata: " + e.getMessage());
         }
     }
 
-    private WeatherData parseSmhiResponse(String json) throws Exception {
-        JsonNode root = objectMapper.readTree(json);
-        JsonNode parameters = root.get("timeSeries").get(0).get("parameters");
+    private WeatherData parseResponse(String json) throws Exception {
+        JsonNode current = objectMapper.readTree(json).get("current");
 
-        double temperature = 0, windSpeed = 0, humidity = 0, precipitation = 0;
-        int precipCategory = 0;
+        double temperature  = current.get("temperature_2m").asDouble();
+        double windSpeedKmh = current.get("wind_speed_10m").asDouble();
+        double humidity     = current.get("relative_humidity_2m").asDouble();
+        double precipitation = current.get("precipitation").asDouble();
+        int weatherCode     = current.get("weather_code").asInt();
 
-        for (JsonNode param : parameters) {
-            String name = param.get("name").asText();
-            double value = param.get("values").get(0).asDouble();
-            switch (name) {
-                case "t"     -> temperature = value;
-                case "ws"    -> windSpeed = value;
-                case "r"     -> humidity = value;
-                case "pmean" -> precipitation = value;
-                case "pcat"  -> precipCategory = (int) value;
-            }
-        }
+        double windSpeedMs = windSpeedKmh / 3.6;
+        int precipCategory = weatherCodeToPrecipCategory(weatherCode);
 
-        return new WeatherData(temperature, windSpeed, humidity, precipitation, precipCategory);
+        return new WeatherData(temperature, windSpeedMs, humidity, precipitation, precipCategory);
+    }
+
+    private int weatherCodeToPrecipCategory(int code) {
+        if (code == 0 || code <= 3)  return 0; // Klart/molnigt
+        if (code == 71 || code == 73 || code == 75 || code == 77 || code == 85 || code == 86) return 1; // Snö
+        if (code == 51 || code == 53 || code == 55) return 4; // Duggregn
+        if (code == 56 || code == 57) return 6; // Underkylt duggregn
+        if (code == 66 || code == 67) return 5; // Underkylt regn
+        if (code >= 61) return 3; // Regn / åska
+        return 0;
     }
 }
