@@ -18,8 +18,8 @@ En webbtjänst som ger AI-genererade klädförslag baserat på ditt nuvarande v�
 
 ### Backend
 - **Java 21** + **Spring Boot 3.1.5**
-- **Maven** — byggverktyg
-- Hostad på **Railway**
+- **Maven** + **Docker** — byggverktyg
+- Hostad på **Render** (gratis, permanent)
 
 ### Externa API:er
 | API | Användning | Kostnad |
@@ -44,8 +44,9 @@ VaderKlader/
 │       └── CorsConfig.java
 ├── src/main/resources/
 │   └── application.properties
-└── wordpress/
-    └── weather-outfit-shortcode.php       # WordPress-plugin
+├── wordpress/
+│   └── weather-outfit-shortcode.php       # WordPress-plugin
+└── Dockerfile                             # För Render-deployment
 ```
 
 ## API
@@ -76,7 +77,7 @@ GET /api/weather-outfit?lat=59.33&lon=18.06&transport=cykel
 
 ## Installation
 
-### Backend
+### Backend lokalt
 
 1. Klona repot
 2. Sätt miljövariabeln `GROQ_API_KEY` med din nyckel från [console.groq.com](https://console.groq.com/)
@@ -85,6 +86,14 @@ GET /api/weather-outfit?lat=59.33&lon=18.06&transport=cykel
 mvn package
 java -jar target/vader-klader-1.0-SNAPSHOT.jar
 ```
+
+### Backend på Render (gratis hosting)
+
+1. Skapa ett konto på [render.com](https://render.com)
+2. **New → Web Service** → välj detta repo
+3. Sätt **Language** till **Docker**
+4. Lägg till miljövariabeln `GROQ_API_KEY`
+5. Klicka **Deploy**
 
 ### WordPress-plugin
 
