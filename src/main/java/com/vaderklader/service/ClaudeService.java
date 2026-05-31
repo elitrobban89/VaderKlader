@@ -14,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 public class ClaudeService {
 
     private static final String GEMINI_URL =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=";
 
     @Value("${gemini.api.key}")
     private String apiKey;
