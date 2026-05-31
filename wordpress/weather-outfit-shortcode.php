@@ -6,7 +6,7 @@
  * Author: elitrobban.se
  */
 
-define('VADER_KLADER_API_URL', 'https://elitrobban.se:8081/api/weather-outfit');
+define('VADER_KLADER_API_URL', 'https://vaderklader-production.up.railway.app/api/weather-outfit');
 
 function vader_klader_shortcode() {
     ob_start(); ?>
