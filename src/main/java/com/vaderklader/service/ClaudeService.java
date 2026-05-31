@@ -13,10 +13,9 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class ClaudeService {
 
-    private static final String GEMINI_URL =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=";
+    private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-    @Value("${gemini.api.key}")
+    @Value("${groq.api.key}")
     private String apiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -27,19 +26,21 @@ public class ClaudeService {
 
         try {
             ObjectNode body = objectMapper.createObjectNode();
-            ArrayNode contents = body.putArray("contents");
-            ObjectNode content = contents.addObject();
-            ArrayNode parts = content.putArray("parts");
-            parts.addObject().put("text", prompt);
+            body.put("model", "llama3-8b-8192");
+            ArrayNode messages = body.putArray("messages");
+            ObjectNode message = messages.addObject();
+            message.put("role", "user");
+            message.put("content", prompt);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + apiKey);
 
             HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(GEMINI_URL + apiKey, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(GROQ_URL, request, String.class);
 
             JsonNode responseJson = objectMapper.readTree(response.getBody());
-            return responseJson.get("candidates").get(0).get("content").get("parts").get(0).get("text").asText();
+            return responseJson.get("choices").get(0).get("message").get("content").asText();
 
         } catch (Exception e) {
             throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
