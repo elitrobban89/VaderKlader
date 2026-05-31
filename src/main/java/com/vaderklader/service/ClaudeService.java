@@ -1,0 +1,69 @@
+package com.vaderklader.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.vaderklader.model.WeatherData;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+public class ClaudeService {
+
+    private static final String CLAUDE_URL = "https://api.anthropic.com/v1/messages";
+
+    @Value("${claude.api.key}")
+    private String apiKey;
+
+    @Value("${claude.model}")
+    private String model;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public String getOutfitSuggestion(WeatherData weather) {
+        String prompt = buildPrompt(weather);
+
+        try {
+            ObjectNode body = objectMapper.createObjectNode();
+            body.put("model", model);
+            body.put("max_tokens", 400);
+
+            ArrayNode messages = body.putArray("messages");
+            ObjectNode message = messages.addObject();
+            message.put("role", "user");
+            message.put("content", prompt);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
+            headers.set("anthropic-version", "2023-06-01");
+
+            HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(CLAUDE_URL, request, String.class);
+
+            JsonNode responseJson = objectMapper.readTree(response.getBody());
+            return responseJson.get("content").get(0).get("text").asText();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Kunde inte hämta klädförslag från Claude: " + e.getMessage());
+        }
+    }
+
+    private String buildPrompt(WeatherData weather) {
+        return String.format("""
+            Du är en klädrådgivare i Sverige. Baserat på nedanstående väderförhållanden, \
+            ge ett konkret och praktiskt klädförslag på svenska i 2-3 meningar. \
+            Var specifik om plaggen (t.ex. "tunn t-shirt", "lätt fleecejacka", "regnkappa", "vinterjacka"). \
+            Inkludera också tips om accessoarer om det är relevant (mössa, handskar, paraply, solglasögon).
+
+            Väderdata just nu:
+            %s
+
+            Ge endast klädförslaget, inga inledande fraser som "Baserat på väderdata...".
+            """, weather.toPromptDescription());
+    }
+}
