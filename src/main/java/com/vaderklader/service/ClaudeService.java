@@ -26,7 +26,7 @@ public class ClaudeService {
 
         try {
             ObjectNode body = objectMapper.createObjectNode();
-            body.put("model", "llama-3.1-8b-instant");
+            body.put("model", "llama-3.3-70b-versatile");
             ArrayNode messages = body.putArray("messages");
             ObjectNode message = messages.addObject();
             message.put("role", "user");
