@@ -66,7 +66,11 @@ public class ClaudeService {
 
         String forecastSection = weather.getForecastWarning() != null
             ? "\nKommande väder (prognos): " + weather.getForecastWarning() +
-              "\nOm prognosen visar kommande regn eller snö — nämn detta tydligt i förslaget och rekommendera t.ex. paraply, regnkappa eller stövlar."
+              "\nVIKTIGT: Nämn prognosen EXPLICIT i ditt svar med exakt tid. Rekommendera konkret utifrån situationen, t.ex.:" +
+              "\n- Paraply om användaren är ute kortare stunder" +
+              "\n- Regnkappa/regnställ om användaren rör sig mycket utomhus (cykel, gång)" +
+              "\n- Vattentäta skor eller gummistövlar om kraftigt regn väntas" +
+              "\nAvsluta alltid med en mening som börjar med: \"OBS: [typ av nederbörd] väntas [tid] — ta med ...\""
             : "";
 
         return String.format("""
