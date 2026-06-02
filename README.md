@@ -6,6 +6,9 @@ AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPre
 
 GPS → välj färdmedel (Buss / Tåg / Cykel / Bil / Gång) → väderdata hämtas → AI-klädförslag visas
 
+## UI
+Startknappen har pulserande glow, shimmer-effekt och float-animation. Mörkt färgtema på väder- och klädförslagsrutorna.
+
 ## Stack
 
 | Del | Teknik |
