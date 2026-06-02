@@ -18,6 +18,7 @@ Testat mot Stockholm med Llama 3.3 70B — naturlig och korrekt svenska för all
 - **Cykel**: fleecejacka, tights, vindskydd
 - **Buss**: lagerklädsel, vattentäta skor vid hållplatsen
 - **Gång**: linneblus, shorts, handskar mot vinden
+- **Gång med regnprognos** (Mexico City, regn om 3h): *"OBS: Regn väntas kl 15:00 — ta med regnkläder eller ett paraply"* + regnkappa och paraply rekommenderades
 
 ## Stack
 
