@@ -1,107 +1,44 @@
 # Väder & Kläder
 
-En webbtjänst som ger AI-genererade klädförslag baserat på ditt nuvarande väder och ditt valda färdmedel. Tjänsten är inbyggd i WordPress via ett shortcode-plugin och drivs av en Java-backend.
+AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPress via shortcode-plugin med Java-backend.
 
-## Hur det fungerar
+## Flöde
 
-1. Användaren klickar på knappen och godkänner GPS-åtkomst
-2. Väljer färdmedel: **Buss**, **Tåg**, **Cykel** eller **Bil**
-3. Backen hämtar aktuell väderdata baserat på GPS-koordinaterna
-4. AI:n genererar ett klädförslag anpassat till både vädret och färdmedlet
-5. Förslaget visas direkt på sidan
+GPS → välj färdmedel (Buss / Tåg / Cykel / Bil) → väderdata hämtas → AI-klädförslag visas
 
-## Teknologier
+## Stack
 
-### Frontend
-- **WordPress** med PHP-plugin och shortcode `[weather_outfit]`
-- **JavaScript** — GPS-hämtning, API-anrop och UI-flöde
-
-### Backend
-- **Java 21** + **Spring Boot 3.1.5**
-- **Maven** + **Docker** — byggverktyg
-- Hostad på **Render** (gratis, permanent)
-
-### Externa API:er
-| API | Användning | Kostnad |
-|-----|-----------|---------|
-| [Open-Meteo](https://open-meteo.com/) | Väderdata (temperatur, vind, luftfuktighet, nederbörd) | Gratis |
-| [Groq API](https://console.groq.com/) | AI-klädförslag via Llama 3.1 8B | Gratis (14 400 anrop/dag) |
-
-## Projektstruktur
-
-```
-VaderKlader/
-├── src/main/java/com/vaderklader/
-│   ├── controller/
-│   │   └── WeatherOutfitController.java   # REST-endpoint
-│   ├── service/
-│   │   ├── SmhiService.java               # Hämtar väderdata
-│   │   └── ClaudeService.java             # Anropar Groq AI
-│   ├── model/
-│   │   ├── WeatherData.java
-│   │   └── WeatherOutfitResponse.java
-│   └── config/
-│       └── CorsConfig.java
-├── src/main/resources/
-│   └── application.properties
-├── wordpress/
-│   └── weather-outfit-shortcode.php       # WordPress-plugin
-└── Dockerfile                             # För Render-deployment
-```
+| Del | Teknik |
+|-----|--------|
+| Frontend | WordPress (PHP), JavaScript |
+| Backend | Java 21, Spring Boot, Docker — hostad på [Render](https://render.com) |
+| Väder | [Open-Meteo](https://open-meteo.com/) — gratis |
+| AI | [Groq](https://console.groq.com/) Llama 3.1 8B — gratis |
 
 ## API
 
-### GET `/api/weather-outfit`
-
-| Parameter | Typ | Beskrivning |
-|-----------|-----|-------------|
-| `lat` | double | Latitud (GPS) |
-| `lon` | double | Longitud (GPS) |
-| `transport` | string | `buss`, `tåg`, `cykel` eller `bil` |
-
-**Exempel:**
 ```
 GET /api/weather-outfit?lat=59.33&lon=18.06&transport=cykel
 ```
 
-**Svar:**
-```json
-{
-  "temperature": 14.2,
-  "windSpeed": 4.1,
-  "humidity": 72,
-  "precipitationDescription": "Lätt regn",
-  "outfitSuggestion": "Ta på dig ett vattentätt ytterskikt..."
-}
-```
-
 ## Installation
 
-### Backend lokalt
+**Backend på Render:**
+1. New → Web Service → välj detta repo → Language: Docker
+2. Lägg till miljövariabel `GROQ_API_KEY`
+3. Deploy
 
-1. Klona repot
-2. Sätt miljövariabeln `GROQ_API_KEY` med din nyckel från [console.groq.com](https://console.groq.com/)
-3. Bygg och starta:
+**Lokalt:**
 ```bash
-mvn package
+GROQ_API_KEY=din-nyckel mvn package
 java -jar target/vader-klader-1.0-SNAPSHOT.jar
 ```
 
-### Backend på Render (gratis hosting)
-
-1. Skapa ett konto på [render.com](https://render.com)
-2. **New → Web Service** → välj detta repo
-3. Sätt **Language** till **Docker**
-4. Lägg till miljövariabeln `GROQ_API_KEY`
-5. Klicka **Deploy**
-
-### WordPress-plugin
-
-1. Zippa `wordpress/weather-outfit-shortcode.php` i en mapp med samma namn
-2. Ladda upp via **Insticksprogram → Lägg till nytt → Ladda upp**
-3. Aktivera pluginet
-4. Lägg till `[weather_outfit]` på valfri sida
+**WordPress-plugin:**
+1. Zippa `wordpress/weather-outfit-shortcode.php` i en mapp
+2. Ladda upp via Insticksprogram → Lägg till nytt
+3. Lägg till `[weather_outfit]` på valfri sida
 
 ## Live
 
-Tjänsten körs på [elitrobban.se](https://elitrobban.se)
+[elitrobban.se](https://elitrobban.se)
