@@ -4,7 +4,7 @@ AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPre
 
 ## Flöde
 
-GPS → välj färdmedel (Buss / Tåg / Cykel / Bil) → väderdata hämtas → AI-klädförslag visas
+GPS → välj färdmedel (Buss / Tåg / Cykel / Bil / Gång) → väderdata hämtas → AI-klädförslag visas
 
 ## Stack
 
