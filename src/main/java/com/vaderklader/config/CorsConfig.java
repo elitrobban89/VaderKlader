@@ -14,7 +14,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins("https://elitrobban.se", "http://localhost", "http://localhost:8081")
+                        .allowedOrigins("*")
                         .allowedMethods("GET", "POST", "OPTIONS");
             }
         };
