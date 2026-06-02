@@ -19,6 +19,8 @@ Testat mot Stockholm med Llama 3.3 70B — naturlig och korrekt svenska för all
 - **Buss**: lagerklädsel, vattentäta skor vid hållplatsen
 - **Gång**: linneblus, shorts, handskar mot vinden
 - **Gång med regnprognos** (Mexico City, regn om 3h): *"OBS: Regn väntas kl 15:00 — ta med regnkläder eller ett paraply"* + regnkappa och paraply rekommenderades
+- **Bil med regnprognos**: vattenavvisande jacka + paraply för promenaden till/från bilen
+- **Tåg med regnprognos**: lagerklädsel för varm vagn + *"ta med paraply om du är ute efter kl 15:00"*
 
 ## Stack
 
