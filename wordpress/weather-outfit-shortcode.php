@@ -10,14 +10,68 @@ define('VADER_KLADER_API_URL', 'https://vaderklader-1.onrender.com/api/weather-o
 
 function vader_klader_shortcode() {
     ob_start(); ?>
-    <div id="vader-klader-widget" style="font-family: sans-serif; max-width: 500px;">
+    <style>
+    .wp-block-navigation__responsive-container-open { display: none !important; }
+
+    @keyframes vk-pulse {
+        0%, 100% { box-shadow: 0 4px 18px rgba(255,193,7,0.5), 0 0 0 0 rgba(255,193,7,0.4); }
+        50%       { box-shadow: 0 4px 28px rgba(255,193,7,0.8), 0 0 0 12px rgba(255,193,7,0); }
+    }
+    @keyframes vk-float {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(-4px); }
+    }
+    @keyframes vk-shimmer {
+        0%   { left: -100%; }
+        100% { left: 160%; }
+    }
+
+    .vk-start-btn {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #FFD600, #FFA000);
+        color: #1a1a1a;
+        border: none;
+        padding: 18px 36px;
+        border-radius: 14px;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        animation: vk-pulse 2.4s ease-in-out infinite, vk-float 3.5s ease-in-out infinite;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .vk-start-btn::after {
+        content: '';
+        position: absolute;
+        top: -20%;
+        left: -100%;
+        width: 50%;
+        height: 140%;
+        background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+        animation: vk-shimmer 2.8s ease-in-out infinite;
+        pointer-events: none;
+    }
+    .vk-start-btn:hover {
+        transform: translateY(-3px) scale(1.04);
+        box-shadow: 0 10px 32px rgba(255,193,7,0.8);
+        animation: none;
+    }
+    .vk-start-btn:active {
+        transform: translateY(0) scale(0.97);
+        box-shadow: 0 2px 10px rgba(255,193,7,0.4);
+    }
+    </style>
+
+    <div id="vader-klader-widget" style="font-family: sans-serif; max-width: 500px; background: transparent !important;">
 
         <!-- Steg 1: Startknapp -->
         <div id="vk-step-start">
-            <button onclick="vkRequestLocation()" style="
-                background:#2196F3; color:white; border:none;
-                padding:14px 28px; border-radius:8px; cursor:pointer; font-size:16px;">
-                📍 Hämta klädförslag för min plats
+            <button onclick="vkRequestLocation()" class="vk-start-btn">
+                ☀️ Hämta klädförslag för min plats
             </button>
         </div>
 
@@ -163,9 +217,7 @@ function vader_klader_shortcode() {
 
     document.addEventListener('DOMContentLoaded', function() {
         var params = new URLSearchParams(window.location.search);
-        if (params.get('autostart') === '1') {
-            vkRequestLocation();
-        }
+        if (params.get('autostart') === '1') { vkRequestLocation(); }
     });
     </script>
     <?php
