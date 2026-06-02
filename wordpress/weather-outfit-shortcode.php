@@ -50,6 +50,11 @@ function vader_klader_shortcode() {
                     padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
                     🚗 Bil
                 </button>
+                <button onclick="vkSelectTransport('gång')" style="
+                    background:#fff; border:2px solid #2196F3; color:#1565C0;
+                    padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
+                    🚶 Gång
+                </button>
             </div>
         </div>
 
@@ -126,7 +131,7 @@ function vader_klader_shortcode() {
 
     function vkSelectTransport(transport) {
         vkShow('vk-loading-outfit');
-        var labels = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗' };
+        var labels = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗', 'gång': 'Gång 🚶' };
         document.getElementById('vk-transport-label').textContent = labels[transport] || transport;
 
         var url = '<?php echo VADER_KLADER_API_URL; ?>?lat=' + vkLat + '&lon=' + vkLon + '&transport=' + encodeURIComponent(transport);
