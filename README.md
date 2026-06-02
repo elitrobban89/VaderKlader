@@ -21,7 +21,7 @@ Testat mot Mexico City (klart nu, duggregn om 3 timmar) — AI:n svarade korrekt
 | Frontend | WordPress (PHP), JavaScript |
 | Backend | Java 21, Spring Boot, Docker — hostad på [Render](https://render.com) |
 | Väder | [Open-Meteo](https://open-meteo.com/) — gratis |
-| AI | [Groq](https://console.groq.com/) Llama 3.1 8B — gratis |
+| AI | [Groq](https://console.groq.com/) Llama 3.3 70B — gratis |
 
 ## API
 
