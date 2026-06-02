@@ -12,6 +12,8 @@ Startknappen har pulserande glow, shimmer-effekt och float-animation. Mörkt fä
 ## Prognos
 Hämtar även timprognos för de nästa 4 timmarna. Om regn eller snö väntas nämner AI:n det i klädförslaget med ungefärlig tid, t.ex. *"Ta med ett paraply — regn väntas om ca 2 timmar (ca kl 16:00)"*.
 
+Testat mot Mexico City (klart nu, duggregn om 3 timmar) — AI:n svarade korrekt med *"under dagens sista timmar när regnet väntas"* och anpassade klädrådet därefter.
+
 ## Stack
 
 | Del | Teknik |
