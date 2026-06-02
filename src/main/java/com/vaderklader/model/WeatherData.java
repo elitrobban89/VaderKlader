@@ -7,14 +7,16 @@ public class WeatherData {
     private double humidity;
     private double precipitation;
     private String precipitationDescription;
+    private String forecastWarning;
 
     public WeatherData(double temperature, double windSpeed, double humidity,
-                       double precipitation, int precipitationCategory) {
+                       double precipitation, int precipitationCategory, String forecastWarning) {
         this.temperature = temperature;
         this.windSpeed = windSpeed;
         this.humidity = humidity;
         this.precipitation = precipitation;
         this.precipitationDescription = describePrecipitation(precipitationCategory);
+        this.forecastWarning = forecastWarning;
     }
 
     private String describePrecipitation(int category) {
@@ -42,4 +44,5 @@ public class WeatherData {
     public double getHumidity() { return humidity; }
     public double getPrecipitation() { return precipitation; }
     public String getPrecipitationDescription() { return precipitationDescription; }
+    public String getForecastWarning() { return forecastWarning; }
 }

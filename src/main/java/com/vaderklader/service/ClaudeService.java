@@ -64,6 +64,11 @@ public class ClaudeService {
             default -> "Användaren reser på ett okänt sätt.";
         };
 
+        String forecastSection = weather.getForecastWarning() != null
+            ? "\nKommande väder (prognos): " + weather.getForecastWarning() +
+              "\nOm prognosen visar kommande regn eller snö — nämn detta tydligt i förslaget och rekommendera t.ex. paraply, regnkappa eller stövlar."
+            : "";
+
         return String.format("""
             Du är en klädrådgivare i Sverige. Baserat på nedanstående väderförhållanden och färdmedel, \
             ge ett konkret och praktiskt klädförslag på svenska i 2-3 meningar. \
@@ -72,11 +77,12 @@ public class ClaudeService {
 
             Väderdata just nu:
             %s
+            %s
 
             Färdmedel: %s
             %s
 
             Ge endast klädförslaget, inga inledande fraser som "Baserat på väderdata...".
-            """, weather.toPromptDescription(), transport, transportContext);
+            """, weather.toPromptDescription(), forecastSection, transport, transportContext);
     }
 }
