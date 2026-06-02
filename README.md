@@ -9,6 +9,9 @@ GPS → välj färdmedel (Buss / Tåg / Cykel / Bil / Gång) → väderdata häm
 ## UI
 Startknappen har pulserande glow, shimmer-effekt och float-animation. Mörkt färgtema på väder- och klädförslagsrutorna.
 
+## Prognos
+Hämtar även timprognos för de nästa 4 timmarna. Om regn eller snö väntas nämner AI:n det i klädförslaget med ungefärlig tid, t.ex. *"Ta med ett paraply — regn väntas om ca 2 timmar (ca kl 16:00)"*.
+
 ## Stack
 
 | Del | Teknik |
