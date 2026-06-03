@@ -7,7 +7,7 @@ AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPre
 GPS → välj färdmedel (Buss / Tåg / Cykel / Bil / Gång) → väderdata hämtas → AI-klädförslag visas
 
 ## UI
-Startknappen har pulserande glow, shimmer-effekt och float-animation. Mörkt färgtema på väder- och klädförslagsrutorna.
+Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ 🌧️ ❄️ ⛅) och texten "Väderbaserade Klädförslag" mot mörk blå bakgrund — mobilanpassad med media query under 420px. Startknappen har pulserande glow, shimmer-effekt och float-animation. Mörkt färgtema på väder- och klädförslagsrutorna.
 
 ## Prognos
 Hämtar även timprognos för de nästa 4 timmarna. Om regn eller snö väntas nämner AI:n det i klädförslaget med ungefärlig tid, t.ex. *"Ta med ett paraply — regn väntas om ca 2 timmar (ca kl 16:00)"*.

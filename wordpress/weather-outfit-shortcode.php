@@ -25,6 +25,80 @@ function vader_klader_shortcode() {
         0%   { left: -100%; }
         100% { left: 160%; }
     }
+    @keyframes vk-weather-scroll {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    .vk-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, #0d2137 0%, #1a3a5c 60%, #0d2137 100%);
+        border-radius: 14px;
+        border: 1px solid rgba(100,181,246,0.25);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+        overflow: hidden;
+        position: relative;
+    }
+    .vk-header-icons {
+        display: flex;
+        gap: 0;
+        overflow: hidden;
+        width: 110px;
+        flex-shrink: 0;
+    }
+    .vk-header-icons-inner {
+        display: flex;
+        gap: 6px;
+        animation: vk-weather-scroll 8s linear infinite;
+        white-space: nowrap;
+    }
+    .vk-header-icon {
+        font-size: 28px;
+        line-height: 1;
+        filter: drop-shadow(0 0 6px rgba(255,220,80,0.6));
+    }
+    .vk-header-text {
+        display: flex;
+        flex-direction: column;
+    }
+    .vk-header-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: 0.2px;
+        line-height: 1.2;
+        text-shadow: 0 1px 8px rgba(100,181,246,0.5);
+    }
+    .vk-header-sub {
+        font-size: 12px;
+        color: #90caf9;
+        margin-top: 2px;
+        letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 420px) {
+        .vk-header {
+            padding: 10px 12px;
+            gap: 10px;
+            border-radius: 10px;
+        }
+        .vk-header-icons {
+            width: 70px;
+        }
+        .vk-header-icon {
+            font-size: 20px;
+        }
+        .vk-header-title {
+            font-size: 16px;
+        }
+        .vk-header-sub {
+            font-size: 11px;
+        }
+    }
 
     .vk-start-btn {
         position: relative;
@@ -67,6 +141,29 @@ function vader_klader_shortcode() {
     </style>
 
     <div id="vader-klader-widget" style="font-family: sans-serif; max-width: 500px; background: transparent !important;">
+
+        <!-- Rubrik -->
+        <div class="vk-header">
+            <div class="vk-header-icons">
+                <div class="vk-header-icons-inner">
+                    <span class="vk-header-icon">☀️</span>
+                    <span class="vk-header-icon">🌤️</span>
+                    <span class="vk-header-icon">🌧️</span>
+                    <span class="vk-header-icon">❄️</span>
+                    <span class="vk-header-icon">⛅</span>
+                    <!-- dubblerat för sömlös loop -->
+                    <span class="vk-header-icon">☀️</span>
+                    <span class="vk-header-icon">🌤️</span>
+                    <span class="vk-header-icon">🌧️</span>
+                    <span class="vk-header-icon">❄️</span>
+                    <span class="vk-header-icon">⛅</span>
+                </div>
+            </div>
+            <div class="vk-header-text">
+                <span class="vk-header-title">Väderbaserade Klädförslag</span>
+                <span class="vk-header-sub">AI · Realtidsväder · Din plats</span>
+            </div>
+        </div>
 
         <!-- Steg 1: Startknapp -->
         <div id="vk-step-start">
