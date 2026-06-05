@@ -2,13 +2,15 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.0
+ * Version: 2.1
  * Author: elitrobban.se
  */
 
 define('VADER_KLADER_API_URL', 'https://vaderklader-1.onrender.com/api/weather-outfit');
 
 function vader_klader_shortcode() {
+    $uid = 'vk_' . substr(md5(uniqid('', true)), 0, 8);
+
     ob_start(); ?>
     <style>
     .wp-block-navigation__responsive-container-open { display: none !important; }
@@ -61,10 +63,7 @@ function vader_klader_shortcode() {
         line-height: 1;
         filter: drop-shadow(0 0 6px rgba(255,220,80,0.6));
     }
-    .vk-header-text {
-        display: flex;
-        flex-direction: column;
-    }
+    .vk-header-text { display: flex; flex-direction: column; }
     .vk-header-title {
         font-size: 20px;
         font-weight: 800;
@@ -81,23 +80,11 @@ function vader_klader_shortcode() {
     }
 
     @media (max-width: 420px) {
-        .vk-header {
-            padding: 10px 12px;
-            gap: 10px;
-            border-radius: 10px;
-        }
-        .vk-header-icons {
-            width: 70px;
-        }
-        .vk-header-icon {
-            font-size: 20px;
-        }
-        .vk-header-title {
-            font-size: 16px;
-        }
-        .vk-header-sub {
-            font-size: 11px;
-        }
+        .vk-header { padding: 10px 12px; gap: 10px; border-radius: 10px; }
+        .vk-header-icons { width: 70px; }
+        .vk-header-icon { font-size: 20px; }
+        .vk-header-title { font-size: 16px; }
+        .vk-header-sub { font-size: 11px; }
     }
 
     .vk-start-btn {
@@ -140,9 +127,8 @@ function vader_klader_shortcode() {
     }
     </style>
 
-    <div id="vader-klader-widget" style="font-family: sans-serif; max-width: 500px; background: transparent !important;">
+    <div id="<?php echo $uid; ?>-widget" style="font-family: sans-serif; max-width: 500px; background: transparent !important;">
 
-        <!-- Rubrik -->
         <div class="vk-header">
             <div class="vk-header-icons">
                 <div class="vk-header-icons-inner">
@@ -151,7 +137,6 @@ function vader_klader_shortcode() {
                     <span class="vk-header-icon">🌧️</span>
                     <span class="vk-header-icon">❄️</span>
                     <span class="vk-header-icon">⛅</span>
-                    <!-- dubblerat för sömlös loop -->
                     <span class="vk-header-icon">☀️</span>
                     <span class="vk-header-icon">🌤️</span>
                     <span class="vk-header-icon">🌧️</span>
@@ -165,157 +150,117 @@ function vader_klader_shortcode() {
             </div>
         </div>
 
-        <!-- Steg 1: Startknapp -->
-        <div id="vk-step-start">
-            <button onclick="vkRequestLocation()" class="vk-start-btn">
+        <div id="<?php echo $uid; ?>-step-start">
+            <button onclick="window['<?php echo $uid; ?>_start']()" class="vk-start-btn">
                 ☀️ Hämta klädförslag för min plats
             </button>
         </div>
 
-        <!-- Laddar GPS -->
-        <div id="vk-loading-gps" style="display:none;">
+        <div id="<?php echo $uid; ?>-loading-gps" style="display:none;">
             <p>📡 Hämtar din position...</p>
         </div>
 
-        <!-- Steg 2: Välj färdmedel -->
-        <div id="vk-step-transport" style="display:none;">
+        <div id="<?php echo $uid; ?>-step-transport" style="display:none;">
             <p style="margin-bottom:12px; font-size:15px;"><strong>Hur tar du dig fram idag?</strong></p>
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                <button onclick="vkSelectTransport('buss')" style="
-                    background:#fff; border:2px solid #2196F3; color:#1565C0;
-                    padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
-                    🚌 Buss
-                </button>
-                <button onclick="vkSelectTransport('tåg')" style="
-                    background:#fff; border:2px solid #2196F3; color:#1565C0;
-                    padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
-                    🚆 Tåg
-                </button>
-                <button onclick="vkSelectTransport('cykel')" style="
-                    background:#fff; border:2px solid #2196F3; color:#1565C0;
-                    padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
-                    🚲 Cykel
-                </button>
-                <button onclick="vkSelectTransport('bil')" style="
-                    background:#fff; border:2px solid #2196F3; color:#1565C0;
-                    padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
-                    🚗 Bil
-                </button>
-                <button onclick="vkSelectTransport('gång')" style="
-                    background:#fff; border:2px solid #2196F3; color:#1565C0;
-                    padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">
-                    🚶 Gång
-                </button>
+                <button onclick="window['<?php echo $uid; ?>_select']('buss')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚌 Buss</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('tåg')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚆 Tåg</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('cykel')" style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚲 Cykel</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('bil')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚗 Bil</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('gång')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚶 Gång</button>
             </div>
         </div>
 
-        <!-- Laddar förslag -->
-        <div id="vk-loading-outfit" style="display:none;">
+        <div id="<?php echo $uid; ?>-loading-outfit" style="display:none;">
             <p>🤖 Hämtar klädförslag...</p>
         </div>
 
-        <!-- Resultat -->
-        <div id="vk-result" style="display:none;">
-            <div id="vk-weather-box" style="
-                background:#1a3a5c; border-left:4px solid #64b5f6;
-                padding:16px; border-radius:6px; margin-bottom:12px;">
+        <div id="<?php echo $uid; ?>-result" style="display:none;">
+            <div style="background:#1a3a5c; border-left:4px solid #64b5f6; padding:16px; border-radius:6px; margin-bottom:12px;">
                 <h3 style="margin:0 0 8px 0; color:#90caf9;">🌡 Väder just nu</h3>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="vk-temp"></span>°C</p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="vk-wind"></span> m/s</p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="vk-humidity"></span>%</p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="vk-precip"></span></p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>°C</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
             </div>
-            <div id="vk-outfit-box" style="
-                background:#3a2a00; border-left:4px solid #FFC107;
-                padding:16px; border-radius:6px;">
-                <h3 style="margin:0 0 8px 0; color:#FFD54F;">👗 AI-klädförslag (<span id="vk-transport-label"></span>)</h3>
-                <p id="vk-outfit" style="margin:0; line-height:1.6; color:#fff8e1;"></p>
+            <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
+                <h3 style="margin:0 0 8px 0; color:#FFD54F;">👗 AI-klädförslag (<span id="<?php echo $uid; ?>-transport-label"></span>)</h3>
+                <p id="<?php echo $uid; ?>-outfit" style="margin:0; line-height:1.6; color:#fff8e1;"></p>
             </div>
-            <button onclick="vkReset()" style="
-                margin-top:14px; background:none; border:1px solid #aaa;
-                padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
+            <button onclick="window['<?php echo $uid; ?>_reset']()" style="margin-top:14px; background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
                 ↺ Välj nytt färdmedel
             </button>
         </div>
 
-        <!-- GPS nekad -->
-        <div id="vk-no-gps" style="display:none;">
+        <div id="<?php echo $uid; ?>-no-gps" style="display:none;">
             <p>Kunde inte få din position. Kontrollera att du har tillåtit platsåtkomst i webbläsaren.</p>
-            <button onclick="vkRequestLocation()" style="
-                background:#2196F3; color:white; border:none;
-                padding:10px 20px; border-radius:4px; cursor:pointer;">
+            <button onclick="window['<?php echo $uid; ?>_start']()" style="background:#2196F3; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">
                 Försök igen
             </button>
         </div>
 
-        <!-- Fel -->
-        <div id="vk-error" style="display:none; color:red;"></div>
+        <div id="<?php echo $uid; ?>-error" style="display:none; color:red;"></div>
     </div>
 
     <script>
-    var vkLat = null;
-    var vkLon = null;
+    (function() {
+        var lat = null, lon = null;
+        var uid = '<?php echo $uid; ?>';
+        var labelMap = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗', 'gång': 'Gång 🚶' };
 
-    function vkShow(id) {
-        var ids = ['vk-step-start','vk-loading-gps','vk-step-transport','vk-loading-outfit','vk-result','vk-no-gps','vk-error'];
-        ids.forEach(function(i) { document.getElementById(i).style.display = 'none'; });
-        document.getElementById(id).style.display = 'block';
-    }
+        function el(suffix) { return document.getElementById(uid + '-' + suffix); }
 
-    function vkRequestLocation() {
-        vkShow('vk-loading-gps');
-        if (!navigator.geolocation) {
-            vkShowError('Din webbläsare stödjer inte GPS.');
-            return;
+        function show(suffix) {
+            ['step-start','loading-gps','step-transport','loading-outfit','result','no-gps','error']
+                .forEach(function(p) { el(p).style.display = 'none'; });
+            el(suffix).style.display = 'block';
         }
-        navigator.geolocation.getCurrentPosition(
-            function(pos) {
-                vkLat = pos.coords.latitude;
-                vkLon = pos.coords.longitude;
-                vkShow('vk-step-transport');
-            },
-            function() {
-                vkShow('vk-no-gps');
+
+        function showError(msg) {
+            el('error').textContent = msg;
+            show('error');
+            setTimeout(function() { el('step-start').style.display = 'block'; }, 100);
+        }
+
+        window[uid + '_start'] = function() {
+            show('loading-gps');
+            if (!navigator.geolocation) { showError('Din webbläsare stödjer inte GPS.'); return; }
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    lat = pos.coords.latitude;
+                    lon = pos.coords.longitude;
+                    show('step-transport');
+                },
+                function() { show('no-gps'); }
+            );
+        };
+
+        window[uid + '_select'] = function(transport) {
+            show('loading-outfit');
+            el('transport-label').textContent = labelMap[transport] || transport;
+
+            fetch('<?php echo VADER_KLADER_API_URL; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) { showError(data.error); return; }
+                    el('temp').textContent     = data.temperature.toFixed(1);
+                    el('wind').textContent     = data.windSpeed.toFixed(1);
+                    el('humidity').textContent = Math.round(data.humidity);
+                    el('precip').textContent   = data.precipitationDescription;
+                    el('outfit').textContent   = data.outfitSuggestion;
+                    show('result');
+                })
+                .catch(function() { showError('Kunde inte nå servern. Försök igen senare.'); });
+        };
+
+        window[uid + '_reset'] = function() { show('step-transport'); };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+                window[uid + '_start']();
             }
-        );
-    }
-
-    function vkSelectTransport(transport) {
-        vkShow('vk-loading-outfit');
-        var labels = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗', 'gång': 'Gång 🚶' };
-        document.getElementById('vk-transport-label').textContent = labels[transport] || transport;
-
-        var url = '<?php echo VADER_KLADER_API_URL; ?>?lat=' + vkLat + '&lon=' + vkLon + '&transport=' + encodeURIComponent(transport);
-        fetch(url)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.error) { vkShowError(data.error); return; }
-                document.getElementById('vk-temp').textContent = data.temperature.toFixed(1);
-                document.getElementById('vk-wind').textContent = data.windSpeed.toFixed(1);
-                document.getElementById('vk-humidity').textContent = Math.round(data.humidity);
-                document.getElementById('vk-precip').textContent = data.precipitationDescription;
-                document.getElementById('vk-outfit').textContent = data.outfitSuggestion;
-                vkShow('vk-result');
-            })
-            .catch(function() { vkShowError('Kunde inte nå servern. Försök igen senare.'); });
-    }
-
-    function vkReset() {
-        vkShow('vk-step-transport');
-    }
-
-    function vkShowError(msg) {
-        document.getElementById('vk-error').textContent = msg;
-        vkShow('vk-error');
-        setTimeout(function() {
-            document.getElementById('vk-step-start').style.display = 'block';
-        }, 100);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        var params = new URLSearchParams(window.location.search);
-        if (params.get('autostart') === '1') { vkRequestLocation(); }
-    });
+        });
+    })();
     </script>
     <?php
     return ob_get_clean();
