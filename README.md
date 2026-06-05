@@ -55,6 +55,13 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 2. Ladda upp via Insticksprogram → Lägg till nytt
 3. Lägg till `[weather_outfit]` på valfri sida
 
+## Driftsättning
+
+UptimeRobot pingar backenden var 5:e minut för att förhindra att Render-tjänsten somnar:
+```
+https://vaderklader-1.onrender.com/api/weather-outfit?lat=59.33&lon=18.06&transport=gång
+```
+
 ## Live
 
 [elitrobban.se](https://elitrobban.se)
