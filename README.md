@@ -19,7 +19,10 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten
 - **Färdmedel** — alla fem alternativ (Buss, Tåg, Cykel, Bil, Gång) har specifik kontext för AI:n
 - **UV-index** — visas i väderkortet och skickas till AI:n vid UV ≥ 3, ger råd om solskydd och solhatt
+- **Vindriktning** — Open-Meteo `wind_direction_10m` omvandlas till svensk kardinalriktning (Norr, Nordost osv.), visas i väderkortet och används av AI:n
+- **Optimerad prompt** — ~80 tokens sparas per anrop genom kortare instruktioner, ger ~25% mer kapacitet per dag
 - **Cache-hantering** — max 500 entries, äldsta hälften rensas automatiskt när taket nås
+- **Groq-status i health** — `GET /api/health` returnerar `groq: quota_exceeded` och `retryIn` när dagsgränsen är nådd
 
 ## Stack
 
