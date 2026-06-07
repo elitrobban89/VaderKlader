@@ -154,8 +154,7 @@ public class ClaudeService {
         };
 
         String forecastSection = weather.getForecastWarning() != null
-            ? "\nPrognos: " + weather.getForecastWarning() +
-              "\nNämn detta EXPLICIT. Vid åska/hagel: sök skydd. Avsluta med: \"OBS: [nederbörd] väntas [tid] — ta med ...\""
+            ? "\nKommande väder: " + weather.getForecastWarning() + " — anpassa klädråden efter detta men upprepa INTE varningen, den visas redan i UI:t."
             : "";
 
         String[] months = {"januari","februari","mars","april","maj","juni",
