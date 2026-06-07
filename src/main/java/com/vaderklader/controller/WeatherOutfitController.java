@@ -48,6 +48,9 @@ public class WeatherOutfitController {
             @RequestParam double lon,
             @RequestParam(required = false, defaultValue = "okänt") String transport,
             HttpServletRequest request) {
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Ogiltiga koordinater."));
+        }
         String ip = getClientIp(request);
         if (isRateLimited(ip)) {
             return ResponseEntity.status(429).body(Map.of(

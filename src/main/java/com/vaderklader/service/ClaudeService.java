@@ -8,9 +8,11 @@ import com.vaderklader.model.WeatherData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -28,10 +30,17 @@ public class ClaudeService {
 
     private record CacheEntry(String suggestion, long timestamp) {}
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
     private volatile long quotaExceededUntil = 0;
+
+    public ClaudeService() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(10000);
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     public String getOutfitSuggestion(WeatherData weather, String transport) {
         String cacheKey = buildCacheKey(weather, transport);
@@ -146,7 +155,11 @@ public class ClaudeService {
               "\nNämn detta EXPLICIT. Vid åska/hagel: sök skydd. Avsluta med: \"OBS: [nederbörd] väntas [tid] — ta med ...\""
             : "";
 
-        return String.format("Väderdata: %s%s\nFärdmedel: %s — %s",
-            weather.toPromptDescription(), forecastSection, transport, transportContext);
+        String[] months = {"januari","februari","mars","april","maj","juni",
+                           "juli","augusti","september","oktober","november","december"};
+        String month = months[LocalDate.now().getMonthValue() - 1];
+
+        return String.format("Månad: %s\nVäderdata: %s%s\nFärdmedel: %s — %s",
+            month, weather.toPromptDescription(), forecastSection, transport, transportContext);
     }
 }
