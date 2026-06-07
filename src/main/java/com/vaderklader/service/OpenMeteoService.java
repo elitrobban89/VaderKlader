@@ -16,7 +16,7 @@ public class OpenMeteoService {
     private static final String OPEN_METEO_URL =
         "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s" +
         "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
-        "&hourly=weather_code,temperature_2m&daily=sunrise,sunset&forecast_days=1&timezone=auto";
+        "&hourly=weather_code,temperature_2m&daily=sunrise,sunset&forecast_days=2&timezone=auto";
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
