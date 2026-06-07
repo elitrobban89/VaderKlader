@@ -15,6 +15,8 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Prognos** — timprognos för de nästa 4 timmarna. Om regn eller snö väntas nämner AI:n det med ungefärlig tid, t.ex. *"Ta med ett paraply — regn väntas om ca 2 timmar (ca kl 16:00)"*
 - **IP-begränsning** — max 10 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
 - **Caching** — identisk väder + färdmedel-kombination cachas i 30 minuter, sparar tokens och ger snabbare svar
+- **Groq-kvalitet** — system-prompt sätter persona, `temperature: 0.4` för konsistenta svar, `max_tokens: 200` håller svaren koncisa
+- **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten
 
 ## Stack
 
