@@ -8,16 +8,18 @@ public class WeatherData {
     private double humidity;
     private double precipitation;
     private String precipitationDescription;
+    private double uvIndex;
     private String forecastWarning;
 
     public WeatherData(double temperature, double feelsLike, double windSpeed, double humidity,
-                       double precipitation, int precipitationCategory, String forecastWarning) {
+                       double precipitation, int precipitationCategory, double uvIndex, String forecastWarning) {
         this.temperature = temperature;
         this.feelsLike = feelsLike;
         this.windSpeed = windSpeed;
         this.humidity = humidity;
         this.precipitation = precipitation;
         this.precipitationDescription = describePrecipitation(precipitationCategory);
+        this.uvIndex = uvIndex;
         this.forecastWarning = forecastWarning;
     }
 
@@ -37,10 +39,19 @@ public class WeatherData {
     }
 
     public String toPromptDescription() {
+        String uvInfo = uvIndex >= 3 ? String.format(", UV-index: %.0f (%s)", uvIndex, describeUv(uvIndex)) : "";
         return String.format(
-            "Temperatur: %.1f°C (upplevd: %.1f°C), Vindhastighet: %.1f m/s, Luftfuktighet: %.0f%%, Nederbörd: %s (%.1f mm/h)",
-            temperature, feelsLike, windSpeed, humidity, precipitationDescription, precipitation
+            "Temperatur: %.1f°C (upplevd: %.1f°C), Vindhastighet: %.1f m/s, Luftfuktighet: %.0f%%, Nederbörd: %s (%.1f mm/h)%s",
+            temperature, feelsLike, windSpeed, humidity, precipitationDescription, precipitation, uvInfo
         );
+    }
+
+    private String describeUv(double uv) {
+        if (uv >= 11) return "extremt — starkt undvik direkt sol";
+        if (uv >= 8)  return "mycket högt — solskydd och skyddskläder";
+        if (uv >= 6)  return "högt — solskydd och solhatt rekommenderas";
+        if (uv >= 3)  return "måttligt — solglasögon rekommenderas";
+        return "lågt";
     }
 
     public double getTemperature() { return temperature; }
@@ -49,5 +60,6 @@ public class WeatherData {
     public double getHumidity() { return humidity; }
     public double getPrecipitation() { return precipitation; }
     public String getPrecipitationDescription() { return precipitationDescription; }
+    public double getUvIndex() { return uvIndex; }
     public String getForecastWarning() { return forecastWarning; }
 }

@@ -202,6 +202,7 @@ function vader_klader_shortcode() {
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s</p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
+                <p id="<?php echo $uid; ?>-uv-row" style="margin:4px 0; display:none; color:#e3f2fd;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
                 <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
                     ⚠️ <span id="<?php echo $uid; ?>-forecast-text"></span>
                 </div>
@@ -284,6 +285,10 @@ function vader_klader_shortcode() {
                     el('wind').textContent     = data.windSpeed.toFixed(1);
                     el('humidity').textContent = Math.round(data.humidity);
                     el('precip').textContent   = data.precipitationDescription;
+                    if (data.uvIndex != null && data.uvIndex >= 3) {
+                        el('uv').textContent = data.uvIndex.toFixed(0);
+                        el('uv-row').style.display = 'block';
+                    }
                     el('outfit').textContent   = data.outfitSuggestion;
                     if (data.forecastWarning) {
                         el('forecast-text').textContent = data.forecastWarning;

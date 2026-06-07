@@ -21,6 +21,7 @@ public class ClaudeService {
 
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
     private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
+    private static final int MAX_CACHE_SIZE = 500;
 
     @Value("${groq.api.key}")
     private String apiKey;
@@ -62,6 +63,7 @@ public class ClaudeService {
 
             JsonNode responseJson = objectMapper.readTree(response.getBody());
             String suggestion = responseJson.get("choices").get(0).get("message").get("content").asText();
+            evictIfNeeded();
             cache.put(cacheKey, new CacheEntry(suggestion, System.currentTimeMillis()));
             return suggestion;
 
@@ -73,6 +75,17 @@ public class ClaudeService {
         } catch (Exception e) {
             throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
         }
+    }
+
+    private void evictIfNeeded() {
+        if (cache.size() < MAX_CACHE_SIZE) return;
+        long cutoff = cache.values().stream()
+                .mapToLong(CacheEntry::timestamp)
+                .sorted()
+                .skip(cache.size() / 2)
+                .findFirst()
+                .orElse(0L);
+        cache.values().removeIf(e -> e.timestamp() < cutoff);
     }
 
     private String buildCacheKey(WeatherData weather, String transport) {
