@@ -55,13 +55,17 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 2. Ladda upp via Insticksprogram → Lägg till nytt
 3. Lägg till `[weather_outfit]` på valfri sida
 
+## Footer
+
+Projektkort i WordPress-footern finns i `wordpress/footer-projektkort.html`. Klistra in innehållet i ett Anpassad HTML-block i footern. CSS-fixet i filen tvingar WordPress Gutenberg-flexblocken att staplas vertikalt på mobil via `:has(.pj-wrap)`.
+
 ## Driftsättning
 
 UptimeRobot pingar backenden var 5:e minut för att förhindra att Render-tjänsten somnar:
 ```
 https://vaderklader-1.onrender.com/api/health
 ```
-(Använd `/api/health` — inte `/api/weather-outfit` — annars förbrukas Groq-tokens i onödan.)
+Viktigt: använd `/api/health` — inte `/api/weather-outfit` — annars förbrukas Groq-tokens i onödan (dagsgräns 100 000).
 
 ## Live
 

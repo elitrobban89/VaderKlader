@@ -239,10 +239,20 @@ function vader_klader_shortcode() {
             show('loading-outfit');
             el('transport-label').textContent = labelMap[transport] || transport;
 
-            fetch('<?php echo VADER_KLADER_API_URL; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport))
-                .then(function(r) { return r.json(); })
+            var controller = new AbortController();
+            var timeout = setTimeout(function() { controller.abort(); }, 30000);
+
+            fetch('<?php echo VADER_KLADER_API_URL; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport), { signal: controller.signal })
+                .then(function(r) {
+                    clearTimeout(timeout);
+                    return r.json().then(function(data) {
+                        if (!r.ok || data.error) {
+                            throw new Error(data.error || ('HTTP ' + r.status));
+                        }
+                        return data;
+                    });
+                })
                 .then(function(data) {
-                    if (data.error) { showError(data.error); return; }
                     el('temp').textContent     = data.temperature.toFixed(1);
                     el('wind').textContent     = data.windSpeed.toFixed(1);
                     el('humidity').textContent = Math.round(data.humidity);
@@ -250,7 +260,14 @@ function vader_klader_shortcode() {
                     el('outfit').textContent   = data.outfitSuggestion;
                     show('result');
                 })
-                .catch(function() { showError('Kunde inte nå servern. Försök igen senare.'); });
+                .catch(function(err) {
+                    clearTimeout(timeout);
+                    if (err.name === 'AbortError') {
+                        showError('Servern svarade inte inom 30 sekunder. Försök igen.');
+                    } else {
+                        showError(err.message || 'Kunde inte nå servern. Försök igen senare.');
+                    }
+                });
         };
 
         window[uid + '_reset'] = function() { show('step-transport'); };
