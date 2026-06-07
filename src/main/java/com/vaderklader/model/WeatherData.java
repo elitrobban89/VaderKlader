@@ -3,15 +3,17 @@ package com.vaderklader.model;
 public class WeatherData {
 
     private double temperature;
+    private double feelsLike;
     private double windSpeed;
     private double humidity;
     private double precipitation;
     private String precipitationDescription;
     private String forecastWarning;
 
-    public WeatherData(double temperature, double windSpeed, double humidity,
+    public WeatherData(double temperature, double feelsLike, double windSpeed, double humidity,
                        double precipitation, int precipitationCategory, String forecastWarning) {
         this.temperature = temperature;
+        this.feelsLike = feelsLike;
         this.windSpeed = windSpeed;
         this.humidity = humidity;
         this.precipitation = precipitation;
@@ -34,12 +36,13 @@ public class WeatherData {
 
     public String toPromptDescription() {
         return String.format(
-            "Temperatur: %.1f°C, Vindhastighet: %.1f m/s, Luftfuktighet: %.0f%%, Nederbörd: %s (%.1f mm/h)",
-            temperature, windSpeed, humidity, precipitationDescription, precipitation
+            "Temperatur: %.1f°C (upplevd: %.1f°C), Vindhastighet: %.1f m/s, Luftfuktighet: %.0f%%, Nederbörd: %s (%.1f mm/h)",
+            temperature, feelsLike, windSpeed, humidity, precipitationDescription, precipitation
         );
     }
 
     public double getTemperature() { return temperature; }
+    public double getFeelsLike() { return feelsLike; }
     public double getWindSpeed() { return windSpeed; }
     public double getHumidity() { return humidity; }
     public double getPrecipitation() { return precipitation; }

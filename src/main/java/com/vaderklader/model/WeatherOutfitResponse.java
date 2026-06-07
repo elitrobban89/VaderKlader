@@ -5,6 +5,7 @@ public class WeatherOutfitResponse {
     private double lat;
     private double lon;
     private double temperature;
+    private double feelsLike;
     private double windSpeed;
     private double humidity;
     private String precipitationDescription;
@@ -14,6 +15,7 @@ public class WeatherOutfitResponse {
         this.lat = lat;
         this.lon = lon;
         this.temperature = weather.getTemperature();
+        this.feelsLike = weather.getFeelsLike();
         this.windSpeed = weather.getWindSpeed();
         this.humidity = weather.getHumidity();
         this.precipitationDescription = weather.getPrecipitationDescription();
@@ -23,6 +25,7 @@ public class WeatherOutfitResponse {
     public double getLat() { return lat; }
     public double getLon() { return lon; }
     public double getTemperature() { return temperature; }
+    public double getFeelsLike() { return feelsLike; }
     public double getWindSpeed() { return windSpeed; }
     public double getHumidity() { return humidity; }
     public String getPrecipitationDescription() { return precipitationDescription; }

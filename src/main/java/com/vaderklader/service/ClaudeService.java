@@ -8,20 +8,36 @@ import com.vaderklader.model.WeatherData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ClaudeService {
 
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+    private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
 
     @Value("${groq.api.key}")
     private String apiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Map<String, long[]> cache = new ConcurrentHashMap<>();
+    // cache value: [0] = timestamp, stored suggestion keyed by cacheKey+"_text" via a separate map
+    private final Map<String, String> cacheText = new ConcurrentHashMap<>();
 
     public String getOutfitSuggestion(WeatherData weather, String transport) {
+        String cacheKey = buildCacheKey(weather, transport);
+        long[] entry = cache.get(cacheKey);
+        if (entry != null && System.currentTimeMillis() - entry[0] < CACHE_TTL_MS) {
+            return cacheText.get(cacheKey);
+        }
+
         String prompt = buildPrompt(weather, transport);
 
         try {
@@ -45,10 +61,42 @@ public class ClaudeService {
             ResponseEntity<String> response = restTemplate.postForEntity(GROQ_URL, request, String.class);
 
             JsonNode responseJson = objectMapper.readTree(response.getBody());
-            return responseJson.get("choices").get(0).get("message").get("content").asText();
+            String suggestion = responseJson.get("choices").get(0).get("message").get("content").asText();
+            cache.put(cacheKey, new long[]{System.currentTimeMillis()});
+            cacheText.put(cacheKey, suggestion);
+            return suggestion;
 
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 429) {
+                throw new RuntimeException("Dagsgränsen för AI-anrop är nådd. Försök igen om " + parseRetryTime(e.getResponseBodyAsString()) + ".");
+            }
+            throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
+        }
+    }
+
+    private String buildCacheKey(WeatherData weather, String transport) {
+        return Math.round(weather.getTemperature()) + "|" +
+               Math.round(weather.getFeelsLike()) + "|" +
+               Math.round(weather.getWindSpeed()) + "|" +
+               weather.getPrecipitationDescription() + "|" +
+               transport.toLowerCase();
+    }
+
+    private String parseRetryTime(String body) {
+        try {
+            Matcher m = Pattern.compile("try again in ([\\d]+m[\\d.]+s|[\\d.]+s)").matcher(body);
+            if (!m.find()) return "en stund";
+            String t = m.group(1);
+            Matcher minMatcher = Pattern.compile("(\\d+)m").matcher(t);
+            Matcher secMatcher = Pattern.compile("([\\d.]+)s").matcher(t);
+            int minutes = minMatcher.find() ? Integer.parseInt(minMatcher.group(1)) : 0;
+            double seconds = secMatcher.find() ? Double.parseDouble(secMatcher.group(1)) : 0;
+            int total = (int) Math.ceil(minutes + seconds / 60.0);
+            return total <= 1 ? "1 minut" : total + " minuter";
+        } catch (Exception e) {
+            return "en stund";
         }
     }
 

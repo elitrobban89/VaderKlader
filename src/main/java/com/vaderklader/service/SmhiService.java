@@ -11,7 +11,7 @@ public class SmhiService {
 
     private static final String OPEN_METEO_URL =
         "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s" +
-        "&current=temperature_2m,wind_speed_10m,relative_humidity_2m,precipitation,weather_code" +
+        "&current=temperature_2m,apparent_temperature,wind_speed_10m,relative_humidity_2m,precipitation,weather_code" +
         "&hourly=weather_code&forecast_days=1&timezone=auto";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -35,6 +35,7 @@ public class SmhiService {
         JsonNode current = root.get("current");
 
         double temperature   = current.get("temperature_2m").asDouble();
+        double feelsLike     = current.get("apparent_temperature").asDouble();
         double windSpeedKmh  = current.get("wind_speed_10m").asDouble();
         double humidity      = current.get("relative_humidity_2m").asDouble();
         double precipitation = current.get("precipitation").asDouble();
@@ -44,7 +45,7 @@ public class SmhiService {
         int precipCategory = weatherCodeToPrecipCategory(weatherCode);
         String forecastWarning = detectForecastWarning(root);
 
-        return new WeatherData(temperature, windSpeedMs, humidity, precipitation, precipCategory, forecastWarning);
+        return new WeatherData(temperature, feelsLike, windSpeedMs, humidity, precipitation, precipCategory, forecastWarning);
     }
 
     private String detectForecastWarning(JsonNode root) {
