@@ -119,11 +119,15 @@ function vader_klader_shortcode() {
                     var probHtml = (h.precipitationProbability > 0)
                         ? '<span style="font-size:10px;color:#64b5f6;">' + h.precipitationProbability + '%</span>'
                         : '<span style="font-size:10px;color:transparent;">0%</span>';
+                    var windHtml = (h.windSpeed >= 2)
+                        ? '<span style="font-size:10px;color:#aaa;">&#128168; ' + h.windSpeed.toFixed(1) + '</span>'
+                        : '<span style="font-size:10px;color:transparent;">-</span>';
                     html += '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;">' +
                             '<span style="font-size:11px;color:#90caf9;">Om ' + h.hoursFromNow + 'h</span>' +
                             '<span style="font-size:22px;line-height:1;">' + h.icon + '</span>' +
                             '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(h.temperature) + '&deg;</span>' +
                             probHtml +
+                            windHtml +
                             '</div>';
                 });
                 strip.innerHTML = html;
@@ -323,6 +327,19 @@ function vader_klader_shortcode() {
         0%   { transform: translateX(0); }
         100% { transform: translateX(-50%); }
     }
+    @keyframes vk-spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .vk-spinner {
+        width: 30px;
+        height: 30px;
+        border: 3px solid rgba(100,181,246,0.2);
+        border-top-color: #64b5f6;
+        border-radius: 50%;
+        animation: vk-spin 0.8s linear infinite;
+        margin: 0 auto 10px;
+    }
     @keyframes vk-groq-pulse {
         0%, 100% { opacity: 1; }
         50%       { opacity: 0.7; }
@@ -483,8 +500,9 @@ function vader_klader_shortcode() {
             </div>
         </div>
 
-        <div id="<?php echo $uid; ?>-loading-outfit" style="display:none;">
-            <p>H&auml;mtar kl&auml;df&ouml;rslag...</p>
+        <div id="<?php echo $uid; ?>-loading-outfit" style="display:none; text-align:center; padding:24px 0;">
+            <div class="vk-spinner"></div>
+            <p style="margin:0; color:#90caf9; font-size:14px;">H&auml;mtar kl&auml;df&ouml;rslag...</p>
         </div>
 
         <div id="<?php echo $uid; ?>-result" style="display:none;">

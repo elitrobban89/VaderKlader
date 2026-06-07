@@ -154,7 +154,7 @@ public class ClaudeService {
         };
 
         String forecastSection = weather.getForecastWarning() != null
-            ? "\nKommande väder: " + weather.getForecastWarning() + " — anpassa klädråden efter detta men upprepa INTE varningen, den visas redan i UI:t."
+            ? "\nKommande väder: " + weather.getForecastWarning() + " — nämn detta naturligt i klädråden (t.ex. rekommendera regnjacka) men skriv INTE en separat OBS-rad."
             : "";
 
         String[] months = {"januari","februari","mars","april","maj","juni",

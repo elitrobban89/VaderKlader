@@ -18,7 +18,7 @@ public class OpenMeteoService {
     private static final String OPEN_METEO_URL =
         "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s" +
         "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
-        "&hourly=weather_code,temperature_2m,precipitation_probability" +
+        "&hourly=weather_code,temperature_2m,precipitation_probability,wind_speed_10m" +
         "&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code" +
         "&forecast_days=7&timezone=auto";
 
@@ -86,6 +86,7 @@ public class OpenMeteoService {
             JsonNode codes  = root.get("hourly").get("weather_code");
             JsonNode temps  = root.get("hourly").get("temperature_2m");
             JsonNode probs  = root.get("hourly").get("precipitation_probability");
+            JsonNode winds  = root.get("hourly").get("wind_speed_10m");
 
             int currentIndex = -1;
             for (int i = 0; i < times.size(); i++) {
@@ -102,7 +103,9 @@ public class OpenMeteoService {
                 int code  = codes.get(idx).asInt();
                 double temp = Math.round(temps.get(idx).asDouble() * 10.0) / 10.0;
                 int prob  = probs != null && !probs.get(idx).isNull() ? probs.get(idx).asInt() : 0;
-                result.add(new WeatherData.HourlyForecast(h, weatherCodeToIcon(code), temp, prob));
+                double windKmh = winds != null && !winds.get(idx).isNull() ? winds.get(idx).asDouble() : 0;
+                double windMs = Math.round((windKmh / 3.6) * 10.0) / 10.0;
+                result.add(new WeatherData.HourlyForecast(h, weatherCodeToIcon(code), temp, prob, windMs));
             }
         } catch (Exception ignored) {}
         return result;

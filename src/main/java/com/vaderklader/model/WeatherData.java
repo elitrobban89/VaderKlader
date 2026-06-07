@@ -4,7 +4,7 @@ import java.util.List;
 
 public class WeatherData {
 
-    public record HourlyForecast(int hoursFromNow, String icon, double temperature, int precipitationProbability) {}
+    public record HourlyForecast(int hoursFromNow, String icon, double temperature, int precipitationProbability, double windSpeed) {}
     public record DailyForecast(String dayName, String icon, double tempMax, double tempMin) {}
 
     private double temperature;
