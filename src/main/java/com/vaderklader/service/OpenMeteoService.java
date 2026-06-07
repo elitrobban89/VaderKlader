@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-public class SmhiService {
+public class OpenMeteoService {
 
     private static final String OPEN_METEO_URL =
         "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s" +
         "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
-        "&hourly=weather_code&forecast_days=1&timezone=auto";
+        "&hourly=weather_code&daily=sunrise,sunset&forecast_days=1&timezone=auto";
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -47,8 +47,21 @@ public class SmhiService {
         String windDirection = toCardinal(windDirDeg);
         int precipCategory = weatherCodeToPrecipCategory(weatherCode);
         String forecastWarning = detectForecastWarning(root);
+        boolean isDark = detectIsDark(root);
 
-        return new WeatherData(temperature, feelsLike, windSpeedMs, windDirection, humidity, precipitation, precipCategory, uvIndex, forecastWarning);
+        return new WeatherData(temperature, feelsLike, windSpeedMs, windDirection,
+                humidity, precipitation, precipCategory, uvIndex, isDark, forecastWarning);
+    }
+
+    private boolean detectIsDark(JsonNode root) {
+        try {
+            String currentTime = root.get("current").get("time").asText(); // "2024-06-07T21:30"
+            String sunrise = root.get("daily").get("sunrise").get(0).asText(); // "2024-06-07T04:23"
+            String sunset  = root.get("daily").get("sunset").get(0).asText();  // "2024-06-07T21:45"
+            return currentTime.compareTo(sunrise) < 0 || currentTime.compareTo(sunset) > 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private String detectForecastWarning(JsonNode root) {
@@ -57,7 +70,7 @@ public class SmhiService {
             JsonNode times = root.get("hourly").get("time");
             JsonNode codes = root.get("hourly").get("weather_code");
 
-            String currentHour = currentTime.substring(0, 13); // "2024-01-15T14"
+            String currentHour = currentTime.substring(0, 13);
             int currentIndex = -1;
             for (int i = 0; i < times.size(); i++) {
                 if (times.get(i).asText().startsWith(currentHour)) {
@@ -95,14 +108,14 @@ public class SmhiService {
     }
 
     private int weatherCodeToPrecipCategory(int code) {
-        if (code == 0 || code <= 3)  return 0; // Klart/molnigt
+        if (code == 0 || code <= 3)   return 0; // Klart/molnigt
         if (code == 96 || code == 99) return 8; // Åska med hagel
         if (code == 95)               return 7; // Åska
         if (code == 71 || code == 73 || code == 75 || code == 77 || code == 85 || code == 86) return 1; // Snö
         if (code == 51 || code == 53 || code == 55) return 4; // Duggregn
         if (code == 56 || code == 57) return 6; // Underkylt duggregn
         if (code == 66 || code == 67) return 5; // Underkylt regn
-        if (code >= 61) return 3; // Regn / åska
+        if (code >= 61)               return 3; // Regn / åska
         return 0;
     }
 }

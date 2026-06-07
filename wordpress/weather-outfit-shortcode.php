@@ -309,7 +309,11 @@ function vader_klader_shortcode() {
                 });
         };
 
-        window[uid + '_reset'] = function() { show('step-transport'); };
+        window[uid + '_reset'] = function() {
+            el('forecast-box').style.display = 'none';
+            el('uv-row').style.display = 'none';
+            show('step-transport');
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
             if (new URLSearchParams(window.location.search).get('autostart') === '1') {

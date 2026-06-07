@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vaderklader.model.WeatherData;
 import com.vaderklader.model.WeatherOutfitResponse;
 import com.vaderklader.service.ClaudeService;
-import com.vaderklader.service.SmhiService;
+import com.vaderklader.service.OpenMeteoService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,14 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/api")
 public class WeatherOutfitController {
 
-    private final SmhiService smhiService;
+    private final OpenMeteoService openMeteoService;
     private final ClaudeService claudeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, List<Long>> ipRequestLog = new ConcurrentHashMap<>();
     private static final int MAX_REQUESTS_PER_HOUR = 10;
 
-    public WeatherOutfitController(SmhiService smhiService, ClaudeService claudeService) {
-        this.smhiService = smhiService;
+    public WeatherOutfitController(OpenMeteoService openMeteoService, ClaudeService claudeService) {
+        this.openMeteoService = openMeteoService;
         this.claudeService = claudeService;
     }
 
@@ -55,7 +55,7 @@ public class WeatherOutfitController {
             ));
         }
         try {
-            WeatherData weather = smhiService.getWeather(lat, lon);
+            WeatherData weather = openMeteoService.getWeather(lat, lon);
             String suggestion = claudeService.getOutfitSuggestion(weather, transport);
             return ResponseEntity.ok(new WeatherOutfitResponse(lat, lon, weather, suggestion));
         } catch (Exception e) {

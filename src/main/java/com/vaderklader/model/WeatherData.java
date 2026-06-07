@@ -10,11 +10,12 @@ public class WeatherData {
     private double precipitation;
     private String precipitationDescription;
     private double uvIndex;
+    private boolean isDark;
     private String forecastWarning;
 
     public WeatherData(double temperature, double feelsLike, double windSpeed, String windDirection,
                        double humidity, double precipitation, int precipitationCategory,
-                       double uvIndex, String forecastWarning) {
+                       double uvIndex, boolean isDark, String forecastWarning) {
         this.temperature = temperature;
         this.feelsLike = feelsLike;
         this.windSpeed = windSpeed;
@@ -23,6 +24,7 @@ public class WeatherData {
         this.precipitation = precipitation;
         this.precipitationDescription = describePrecipitation(precipitationCategory);
         this.uvIndex = uvIndex;
+        this.isDark = isDark;
         this.forecastWarning = forecastWarning;
     }
 
@@ -42,10 +44,11 @@ public class WeatherData {
     }
 
     public String toPromptDescription() {
-        String uvInfo = uvIndex >= 3 ? String.format(", UV: %.0f (%s)", uvIndex, describeUv(uvIndex)) : "";
+        String uvInfo   = uvIndex >= 3 ? String.format(", UV: %.0f (%s)", uvIndex, describeUv(uvIndex)) : "";
+        String darkInfo = isDark ? ", Det är mörkt ute — reflexer rekommenderas vid cykling och gång." : "";
         return String.format(
-            "Temp: %.1f°C (upplevd: %.1f°C), Vind: %.1f m/s från %s, Luftfuktighet: %.0f%%, Nederbörd: %s%s",
-            temperature, feelsLike, windSpeed, windDirection, humidity, precipitationDescription, uvInfo
+            "Temp: %.1f°C (upplevd: %.1f°C), Vind: %.1f m/s från %s, Luftfuktighet: %.0f%%, Nederbörd: %s%s%s",
+            temperature, feelsLike, windSpeed, windDirection, humidity, precipitationDescription, uvInfo, darkInfo
         );
     }
 
@@ -65,5 +68,6 @@ public class WeatherData {
     public double getPrecipitation() { return precipitation; }
     public String getPrecipitationDescription() { return precipitationDescription; }
     public double getUvIndex() { return uvIndex; }
+    public boolean isDark() { return isDark; }
     public String getForecastWarning() { return forecastWarning; }
 }
