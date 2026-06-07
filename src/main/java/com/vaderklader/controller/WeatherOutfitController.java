@@ -31,8 +31,15 @@ public class WeatherOutfitController {
     }
 
     @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("ok");
+    public ResponseEntity<?> health() {
+        if (claudeService.isQuotaExceeded()) {
+            return ResponseEntity.ok(Map.of(
+                "status", "ok",
+                "groq", "quota_exceeded",
+                "retryIn", claudeService.getQuotaResetInfo()
+            ));
+        }
+        return ResponseEntity.ok(Map.of("status", "ok", "groq", "ok"));
     }
 
     @GetMapping("/weather-outfit")

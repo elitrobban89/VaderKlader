@@ -199,7 +199,7 @@ function vader_klader_shortcode() {
             <div style="background:#1a3a5c; border-left:4px solid #64b5f6; padding:16px; border-radius:6px; margin-bottom:12px;">
                 <h3 style="margin:0 0 8px 0; color:#90caf9;">🌡 Väder just nu</h3>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>°C &nbsp;<span style="color:#90caf9; font-size:13px;">(upplevd: <span id="<?php echo $uid; ?>-feels"></span>°C)</span></p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s</p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span style="color:#90caf9; font-size:13px;">från <span id="<?php echo $uid; ?>-winddir"></span></span></p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
                 <p id="<?php echo $uid; ?>-uv-row" style="margin:4px 0; display:none; color:#e3f2fd;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
@@ -283,6 +283,7 @@ function vader_klader_shortcode() {
                     el('temp').textContent     = data.temperature.toFixed(1);
                     el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '–';
                     el('wind').textContent     = data.windSpeed.toFixed(1);
+                    el('winddir').textContent  = data.windDirection || '';
                     el('humidity').textContent = Math.round(data.humidity);
                     el('precip').textContent   = data.precipitationDescription;
                     if (data.uvIndex != null && data.uvIndex >= 3) {

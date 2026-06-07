@@ -5,17 +5,20 @@ public class WeatherData {
     private double temperature;
     private double feelsLike;
     private double windSpeed;
+    private String windDirection;
     private double humidity;
     private double precipitation;
     private String precipitationDescription;
     private double uvIndex;
     private String forecastWarning;
 
-    public WeatherData(double temperature, double feelsLike, double windSpeed, double humidity,
-                       double precipitation, int precipitationCategory, double uvIndex, String forecastWarning) {
+    public WeatherData(double temperature, double feelsLike, double windSpeed, String windDirection,
+                       double humidity, double precipitation, int precipitationCategory,
+                       double uvIndex, String forecastWarning) {
         this.temperature = temperature;
         this.feelsLike = feelsLike;
         this.windSpeed = windSpeed;
+        this.windDirection = windDirection;
         this.humidity = humidity;
         this.precipitation = precipitation;
         this.precipitationDescription = describePrecipitation(precipitationCategory);
@@ -39,10 +42,10 @@ public class WeatherData {
     }
 
     public String toPromptDescription() {
-        String uvInfo = uvIndex >= 3 ? String.format(", UV-index: %.0f (%s)", uvIndex, describeUv(uvIndex)) : "";
+        String uvInfo = uvIndex >= 3 ? String.format(", UV: %.0f (%s)", uvIndex, describeUv(uvIndex)) : "";
         return String.format(
-            "Temperatur: %.1f°C (upplevd: %.1f°C), Vindhastighet: %.1f m/s, Luftfuktighet: %.0f%%, Nederbörd: %s (%.1f mm/h)%s",
-            temperature, feelsLike, windSpeed, humidity, precipitationDescription, precipitation, uvInfo
+            "Temp: %.1f°C (upplevd: %.1f°C), Vind: %.1f m/s från %s, Luftfuktighet: %.0f%%, Nederbörd: %s%s",
+            temperature, feelsLike, windSpeed, windDirection, humidity, precipitationDescription, uvInfo
         );
     }
 
@@ -57,6 +60,7 @@ public class WeatherData {
     public double getTemperature() { return temperature; }
     public double getFeelsLike() { return feelsLike; }
     public double getWindSpeed() { return windSpeed; }
+    public String getWindDirection() { return windDirection; }
     public double getHumidity() { return humidity; }
     public double getPrecipitation() { return precipitation; }
     public String getPrecipitationDescription() { return precipitationDescription; }

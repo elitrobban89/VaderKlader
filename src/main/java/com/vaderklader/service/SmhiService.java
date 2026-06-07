@@ -11,7 +11,7 @@ public class SmhiService {
 
     private static final String OPEN_METEO_URL =
         "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s" +
-        "&current=temperature_2m,apparent_temperature,wind_speed_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
+        "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
         "&hourly=weather_code&forecast_days=1&timezone=auto";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -34,19 +34,21 @@ public class SmhiService {
         JsonNode root    = objectMapper.readTree(json);
         JsonNode current = root.get("current");
 
-        double temperature   = current.get("temperature_2m").asDouble();
-        double feelsLike     = current.get("apparent_temperature").asDouble();
-        double windSpeedKmh  = current.get("wind_speed_10m").asDouble();
-        double humidity      = current.get("relative_humidity_2m").asDouble();
-        double precipitation = current.get("precipitation").asDouble();
-        int weatherCode      = current.get("weather_code").asInt();
-        double uvIndex       = current.get("uv_index").asDouble();
+        double temperature    = current.get("temperature_2m").asDouble();
+        double feelsLike      = current.get("apparent_temperature").asDouble();
+        double windSpeedKmh   = current.get("wind_speed_10m").asDouble();
+        int windDirDeg        = current.get("wind_direction_10m").asInt();
+        double humidity       = current.get("relative_humidity_2m").asDouble();
+        double precipitation  = current.get("precipitation").asDouble();
+        int weatherCode       = current.get("weather_code").asInt();
+        double uvIndex        = current.get("uv_index").asDouble();
 
         double windSpeedMs = Math.round((windSpeedKmh / 3.6) * 10.0) / 10.0;
+        String windDirection = toCardinal(windDirDeg);
         int precipCategory = weatherCodeToPrecipCategory(weatherCode);
         String forecastWarning = detectForecastWarning(root);
 
-        return new WeatherData(temperature, feelsLike, windSpeedMs, humidity, precipitation, precipCategory, uvIndex, forecastWarning);
+        return new WeatherData(temperature, feelsLike, windSpeedMs, windDirection, humidity, precipitation, precipCategory, uvIndex, forecastWarning);
     }
 
     private String detectForecastWarning(JsonNode root) {
@@ -85,6 +87,11 @@ public class SmhiService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String toCardinal(int deg) {
+        String[] dirs = {"Norr", "Nordost", "Öst", "Sydost", "Syd", "Sydväst", "Väst", "Nordväst"};
+        return dirs[(int) Math.round(deg / 45.0) % 8];
     }
 
     private int weatherCodeToPrecipCategory(int code) {

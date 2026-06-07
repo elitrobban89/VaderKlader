@@ -31,6 +31,7 @@ public class ClaudeService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+    private volatile long quotaExceededUntil = 0;
 
     public String getOutfitSuggestion(WeatherData weather, String transport) {
         String cacheKey = buildCacheKey(weather, transport);
@@ -69,7 +70,9 @@ public class ClaudeService {
 
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode().value() == 429) {
-                throw new RuntimeException("Dagsgränsen för AI-anrop är nådd. Försök igen om " + parseRetryTime(e.getResponseBodyAsString()) + ".");
+                String body = e.getResponseBodyAsString();
+                quotaExceededUntil = System.currentTimeMillis() + parseRetryMs(body);
+                throw new RuntimeException("Dagsgränsen för AI-anrop är nådd. Försök igen om " + parseRetryTime(body) + ".");
             }
             throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
         } catch (Exception e) {
@@ -96,68 +99,54 @@ public class ClaudeService {
                transport.toLowerCase();
     }
 
-    private String parseRetryTime(String body) {
+    public boolean isQuotaExceeded() {
+        return System.currentTimeMillis() < quotaExceededUntil;
+    }
+
+    public String getQuotaResetInfo() {
+        long ms = quotaExceededUntil - System.currentTimeMillis();
+        if (ms <= 0) return null;
+        int minutes = (int) Math.ceil(ms / 60_000.0);
+        return minutes <= 1 ? "1 minut" : minutes + " minuter";
+    }
+
+    private long parseRetryMs(String body) {
         try {
             Matcher m = Pattern.compile("try again in ([\\d]+m[\\d.]+s|[\\d.]+s)").matcher(body);
-            if (!m.find()) return "en stund";
+            if (!m.find()) return 60_000L;
             String t = m.group(1);
             Matcher minMatcher = Pattern.compile("(\\d+)m").matcher(t);
             Matcher secMatcher = Pattern.compile("([\\d.]+)s").matcher(t);
             int minutes = minMatcher.find() ? Integer.parseInt(minMatcher.group(1)) : 0;
             double seconds = secMatcher.find() ? Double.parseDouble(secMatcher.group(1)) : 0;
-            int total = (int) Math.ceil(minutes + seconds / 60.0);
-            return total <= 1 ? "1 minut" : total + " minuter";
+            return (long) ((minutes * 60 + seconds) * 1000);
         } catch (Exception e) {
-            return "en stund";
+            return 60_000L;
         }
+    }
+
+    private String parseRetryTime(String body) {
+        long ms = parseRetryMs(body);
+        int total = (int) Math.ceil(ms / 60_000.0);
+        return total <= 1 ? "1 minut" : total + " minuter";
     }
 
     private String buildPrompt(WeatherData weather, String transport) {
         String transportContext = switch (transport.toLowerCase()) {
-            case "cykel" -> """
-                Användaren cyklar till sitt mål. Tänk på: rörelsefrihet, vindskydd, \
-                svettreglering och synlighet (reflexer/ljusa kläder). Undvik alltför löst sittande plagg.""";
-            case "buss" -> """
-                Användaren åker buss. Tänk på: väntan utomhus vid busshållplatsen (vind, kyla, regn) \
-                och att det kan vara varmt inomhus på bussen — lagerklädsel är bra.""";
-            case "tåg" -> """
-                Användaren åker tåg. Tänk på: gång till/från station, väntan på perrongen \
-                och att det är varmt inne på tåget — lagerklädsel är bra.""";
-            case "bil" -> """
-                Användaren kör bil. Tänk på: kort promenad till/från bilen i väder, \
-                och att det är varmt i bilen — ett ytterplagg som lätt kan tas av är bra.""";
-            case "gång" -> """
-                Användaren går till sitt mål. Tänk på: hela vägen är utomhus, \
-                rörelsefrihet är viktig och temperaturen upplevs annorlunda i rörelse. \
-                Bekväma skor är ett plus att nämna.""";
-            default -> "Användaren reser på ett okänt sätt.";
+            case "cykel" -> "Cykel: rörelsefrihet, vindskydd, svettreglering, reflexer vid dålig sikt.";
+            case "buss"  -> "Buss: väntan utomhus vid hållplats, varmt inomhus — lagerklädsel.";
+            case "tåg"   -> "Tåg: gång till/från station, varmt inne — lagerklädsel.";
+            case "bil"   -> "Bil: kort promenad i väder, varmt i bilen — lättavtagbart ytterplagg.";
+            case "gång"  -> "Gång: hela vägen utomhus, rörelsefrihet, bekväma skor.";
+            default      -> "";
         };
 
         String forecastSection = weather.getForecastWarning() != null
-            ? "\nKommande väder (prognos): " + weather.getForecastWarning() +
-              "\nVIKTIGT: Nämn prognosen EXPLICIT i ditt svar med exakt tid. Rekommendera konkret utifrån situationen, t.ex.:" +
-              "\n- Paraply om användaren är ute kortare stunder" +
-              "\n- Regnkappa/regnställ om användaren rör sig mycket utomhus (cykel, gång)" +
-              "\n- Vattentäta skor eller gummistövlar om kraftigt regn väntas" +
-              "\n- Vid åska: undvik öppna platser, håll sig inomhus om möjligt" +
-              "\n- Vid hagel: skydda huvud och sök skydd — cyklister bör stanna" +
-              "\nAvsluta alltid med en mening som börjar med: \"OBS: [typ av nederbörd] väntas [tid] — ta med ...\""
+            ? "\nPrognos: " + weather.getForecastWarning() +
+              "\nNämn detta EXPLICIT. Vid åska/hagel: sök skydd. Avsluta med: \"OBS: [nederbörd] väntas [tid] — ta med ...\""
             : "";
 
-        return String.format("""
-            Du är en klädrådgivare i Sverige. Baserat på nedanstående väderförhållanden och färdmedel, \
-            ge ett konkret och praktiskt klädförslag på svenska i 2-3 meningar. \
-            Var specifik om plaggen (t.ex. "tunn t-shirt", "lätt fleecejacka", "regnkappa", "vinterjacka"). \
-            Inkludera också tips om accessoarer om det är relevant (mössa, handskar, paraply, solglasögon).
-
-            Väderdata just nu:
-            %s
-            %s
-
-            Färdmedel: %s
-            %s
-
-            Ge endast klädförslaget, inga inledande fraser som "Baserat på väderdata...".
-            """, weather.toPromptDescription(), forecastSection, transport, transportContext);
+        return String.format("Väderdata: %s%s\nFärdmedel: %s — %s",
+            weather.toPromptDescription(), forecastSection, transport, transportContext);
     }
 }
