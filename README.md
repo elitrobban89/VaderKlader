@@ -27,7 +27,9 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Reset-fix** — prognos-varning och UV-rad döljs korrekt när användaren väljer nytt färdmedel
 - **Koordinatvalidering** — ogiltiga lat/lon ger 400 Bad Request med tydligt felmeddelande
 - **Timeouts** — 5s connect / 10s read på Open-Meteo och Groq, inga frysta requests
-- **Årstidskontext** — aktuell månad skickas till AI:n för säsongsan­passade klädråd
+- **Årstidskontext** — aktuell månad skickas till AI:n för säsongsanpassade klädråd
+- **Cache-nyckel** — inkluderar vindrikting och mörker, dag/natt och nord/sydvind ger separata svar
+- **Quota-reset** — `quotaExceededUntil` nollställs vid lyckat Groq-anrop, health-endpointen stämmer efter omstart
 
 ## Stack
 
