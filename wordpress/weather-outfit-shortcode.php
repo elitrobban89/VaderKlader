@@ -128,8 +128,10 @@ function vader_klader_shortcode() {
                 });
                 strip.innerHTML = html;
                 strip.style.display = 'flex';
+                el('hourly-label').style.display = 'block';
             } else {
                 strip.style.display = 'none';
+                el('hourly-label').style.display = 'none';
             }
 
             el('sunrise-row').style.display = 'none';
@@ -152,6 +154,7 @@ function vader_klader_shortcode() {
                 });
                 el('daily-strip').innerHTML = dhtml;
                 el('daily-strip').style.display = 'flex';
+                el('daily-label').style.display = 'block';
             }
 
             show('result');
@@ -241,8 +244,10 @@ function vader_klader_shortcode() {
             el('uv-row').style.display = 'none';
             el('feelslike-warn').style.display = 'none';
             el('sunrise-row').style.display = 'none';
+            el('hourly-label').style.display = 'none';
             el('hourly-strip').style.display = 'none';
             el('hourly-strip').innerHTML = '';
+            el('daily-label').style.display = 'none';
             el('daily-strip').style.display = 'none';
             el('daily-strip').innerHTML = '';
             show('step-transport');
@@ -459,7 +464,7 @@ function vader_klader_shortcode() {
 
         <div id="<?php echo $uid; ?>-step-start">
             <button onclick="window['<?php echo $uid; ?>_start']()" class="vk-start-btn">
-                H&auml;mta kl&auml;dforslag
+                H&auml;mta kl&auml;df&ouml;rslag
             </button>
         </div>
 
@@ -479,7 +484,7 @@ function vader_klader_shortcode() {
         </div>
 
         <div id="<?php echo $uid; ?>-loading-outfit" style="display:none;">
-            <p>H&auml;mtar kl&auml;dforslag...</p>
+            <p>H&auml;mtar kl&auml;df&ouml;rslag...</p>
         </div>
 
         <div id="<?php echo $uid; ?>-result" style="display:none;">
@@ -495,16 +500,18 @@ function vader_klader_shortcode() {
                     &#9888; <span id="<?php echo $uid; ?>-forecast-text"></span>
                 </div>
                 <p id="<?php echo $uid; ?>-sunrise-row" style="margin:4px 0; display:none; color:#e3f2fd; font-size:13px;">&#127774; <span id="<?php echo $uid; ?>-sunrise-val"></span> &nbsp;&#127762; <span id="<?php echo $uid; ?>-sunset-val"></span></p>
-                <div id="<?php echo $uid; ?>-hourly-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; margin-top:12px; padding:10px 8px; background:rgba(255,255,255,0.05); border-radius:6px;"></div>
+                <p id="<?php echo $uid; ?>-hourly-label" style="display:none; margin:10px 0 4px 0; font-size:11px; color:#90caf9; text-transform:uppercase; letter-spacing:0.5px;">N&auml;sta 6 timmar</p>
+                <div id="<?php echo $uid; ?>-hourly-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; padding:10px 8px; background:rgba(255,255,255,0.05); border-radius:6px;"></div>
             </div>
             <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
-                <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">AI-kl&auml;dforslag &mdash; <span id="<?php echo $uid; ?>-transport-label"></span></h3>
+                <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">AI-kl&auml;df&ouml;rslag &mdash; <span id="<?php echo $uid; ?>-transport-label"></span></h3>
                 <p id="<?php echo $uid; ?>-outfit" style="margin:0 0 14px 0; line-height:1.6; color:#fff8e1;"></p>
                 <a href="https://groq.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(245,80,54,0.15);border:1px solid rgba(245,80,54,0.4);border-radius:20px;font-size:11px;font-weight:700;color:#ff7a5c;letter-spacing:0.4px;text-decoration:none;">
                     &#9889; Drivs av Groq AI
                 </a>
             </div>
-            <div id="<?php echo $uid; ?>-daily-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; margin-top:12px; padding:10px 8px; background:#1a2a3a; border-radius:6px;"></div>
+            <p id="<?php echo $uid; ?>-daily-label" style="display:none; margin:12px 0 4px 0; font-size:11px; color:#90caf9; text-transform:uppercase; letter-spacing:0.5px;">Veckoprognos</p>
+            <div id="<?php echo $uid; ?>-daily-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; padding:10px 8px; background:#1a2a3a; border-radius:6px;"></div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:6px;">
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
@@ -521,21 +528,21 @@ function vader_klader_shortcode() {
         <div id="<?php echo $uid; ?>-no-gps" style="display:none;">
             <p style="font-size:14px; margin-bottom:14px; color:#ccc;">Kunde inte h&auml;mta din position via GPS.</p>
             <div style="margin-bottom:16px;">
-                <p style="font-size:14px; margin-bottom:8px; color:#ccc;"><strong>Sok efter din stad:</strong></p>
+                <p style="font-size:14px; margin-bottom:8px; color:#ccc;"><strong>S&ouml;k efter din stad:</strong></p>
                 <div style="display:flex; gap:8px;">
                     <input id="<?php echo $uid; ?>-city-input" type="text" placeholder="t.ex. Stockholm"
                         style="flex:1; padding:10px 14px; border-radius:6px; border:1px solid #555; background:#1a2030; color:#fff; font-size:14px; outline:none;"
                         onkeydown="if(event.key==='Enter') window['<?php echo $uid; ?>_citySearch']()" />
                     <button onclick="window['<?php echo $uid; ?>_citySearch']()"
                         style="background:#2196F3; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;">
-                        Sok
+                        S&ouml;k
                     </button>
                 </div>
                 <p id="<?php echo $uid; ?>-city-error" style="display:none; color:#ef5350; font-size:13px; margin-top:6px;"></p>
             </div>
             <button onclick="window['<?php echo $uid; ?>_start']()"
                 style="background:none; border:1px solid #666; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#aaa;">
-                Forsok med GPS igen
+                F&ouml;rs&ouml;k med GPS igen
             </button>
         </div>
 

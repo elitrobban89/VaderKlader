@@ -133,13 +133,13 @@ public class OpenMeteoService {
         try {
             DayOfWeek dow = LocalDate.parse(dateStr).getDayOfWeek();
             return switch (dow) {
-                case MONDAY    -> "Måndag";
-                case TUESDAY   -> "Tisdag";
-                case WEDNESDAY -> "Onsdag";
-                case THURSDAY  -> "Torsdag";
-                case FRIDAY    -> "Fredag";
-                case SATURDAY  -> "Lördag";
-                case SUNDAY    -> "Söndag";
+                case MONDAY    -> "Mån";
+                case TUESDAY   -> "Tis";
+                case WEDNESDAY -> "Ons";
+                case THURSDAY  -> "Tor";
+                case FRIDAY    -> "Fre";
+                case SATURDAY  -> "Lör";
+                case SUNDAY    -> "Sön";
             };
         } catch (Exception e) {
             return dateStr;
