@@ -1,5 +1,7 @@
 package com.vaderklader.model;
 
+import java.util.List;
+
 public class WeatherOutfitResponse {
 
     private double lat;
@@ -13,6 +15,7 @@ public class WeatherOutfitResponse {
     private String precipitationDescription;
     private double uvIndex;
     private String forecastWarning;
+    private List<WeatherData.HourlyForecast> hourlyForecast;
     private String outfitSuggestion;
 
     public WeatherOutfitResponse(double lat, double lon, WeatherData weather, String outfitSuggestion) {
@@ -27,6 +30,7 @@ public class WeatherOutfitResponse {
         this.precipitationDescription = weather.getPrecipitationDescription();
         this.uvIndex = weather.getUvIndex();
         this.forecastWarning = weather.getForecastWarning();
+        this.hourlyForecast = weather.getHourlyForecast();
         this.outfitSuggestion = outfitSuggestion;
     }
 
@@ -41,5 +45,6 @@ public class WeatherOutfitResponse {
     public String getPrecipitationDescription() { return precipitationDescription; }
     public double getUvIndex() { return uvIndex; }
     public String getForecastWarning() { return forecastWarning; }
+    public List<WeatherData.HourlyForecast> getHourlyForecast() { return hourlyForecast; }
     public String getOutfitSuggestion() { return outfitSuggestion; }
 }

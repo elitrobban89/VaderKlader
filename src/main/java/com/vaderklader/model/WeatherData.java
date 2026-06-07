@@ -1,6 +1,10 @@
 package com.vaderklader.model;
 
+import java.util.List;
+
 public class WeatherData {
+
+    public record HourlyForecast(int hour, String icon, double temperature) {}
 
     private double temperature;
     private double feelsLike;
@@ -12,10 +16,12 @@ public class WeatherData {
     private double uvIndex;
     private boolean isDark;
     private String forecastWarning;
+    private List<HourlyForecast> hourlyForecast;
 
     public WeatherData(double temperature, double feelsLike, double windSpeed, String windDirection,
                        double humidity, double precipitation, int precipitationCategory,
-                       double uvIndex, boolean isDark, String forecastWarning) {
+                       double uvIndex, boolean isDark, String forecastWarning,
+                       List<HourlyForecast> hourlyForecast) {
         this.temperature = temperature;
         this.feelsLike = feelsLike;
         this.windSpeed = windSpeed;
@@ -26,6 +32,7 @@ public class WeatherData {
         this.uvIndex = uvIndex;
         this.isDark = isDark;
         this.forecastWarning = forecastWarning;
+        this.hourlyForecast = hourlyForecast;
     }
 
     private String describePrecipitation(int category) {
@@ -75,4 +82,5 @@ public class WeatherData {
     public double getUvIndex() { return uvIndex; }
     public boolean isDark() { return isDark; }
     public String getForecastWarning() { return forecastWarning; }
+    public List<HourlyForecast> getHourlyForecast() { return hourlyForecast; }
 }

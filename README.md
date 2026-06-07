@@ -43,6 +43,8 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Refresh-knapp** — uppdaterar väder och klädförslag med ett klick utan att byta färdmedel, rensar localStorage-cachen
 - **Feels like-varning** — blå varningsrad visas när upplevd temperatur avviker mer än 4°C från faktisk (t.ex. "Känns 6°C kallare pga vind")
 - **Nederbördsmängd** — visar mm bredvid beskrivningen när det regnar/snöar, t.ex. "Lätt regn (0.4 mm)"
+- **6-timmarsprognos** — horisontell remsa under väderkortet visar ikon + temperatur för de nästa 6 timmarna (Open-Meteo hourly, wäder-emojis per kod)
+- **Transport-emojis** — färdmedelsetiketter inkluderar emoji: Buss 🚌, Tåg 🚆, Cykel 🚲, Bil 🚗, Gång 🚶
 
 ## Stack
 

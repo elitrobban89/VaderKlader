@@ -7,13 +7,16 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class OpenMeteoService {
 
     private static final String OPEN_METEO_URL =
         "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s" +
         "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
-        "&hourly=weather_code&daily=sunrise,sunset&forecast_days=1&timezone=auto";
+        "&hourly=weather_code,temperature_2m&daily=sunrise,sunset&forecast_days=1&timezone=auto";
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -56,9 +59,56 @@ public class OpenMeteoService {
         int precipCategory = weatherCodeToPrecipCategory(weatherCode);
         String forecastWarning = detectForecastWarning(root);
         boolean isDark = detectIsDark(root);
+        List<WeatherData.HourlyForecast> hourlyForecast = extractHourlyForecast(root);
 
         return new WeatherData(temperature, feelsLike, windSpeedMs, windDirection,
-                humidity, precipitation, precipCategory, uvIndex, isDark, forecastWarning);
+                humidity, precipitation, precipCategory, uvIndex, isDark, forecastWarning, hourlyForecast);
+    }
+
+    private List<WeatherData.HourlyForecast> extractHourlyForecast(JsonNode root) {
+        List<WeatherData.HourlyForecast> result = new ArrayList<>();
+        try {
+            String currentTime = root.get("current").get("time").asText();
+            String currentHour = currentTime.substring(0, 13);
+            JsonNode times = root.get("hourly").get("time");
+            JsonNode codes = root.get("hourly").get("weather_code");
+            JsonNode temps = root.get("hourly").get("temperature_2m");
+
+            int currentIndex = -1;
+            for (int i = 0; i < times.size(); i++) {
+                if (times.get(i).asText().startsWith(currentHour)) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            if (currentIndex < 0) return result;
+
+            for (int h = 1; h <= 6; h++) {
+                int idx = currentIndex + h;
+                if (idx >= times.size()) break;
+                String timeStr = times.get(idx).asText();
+                int hour = Integer.parseInt(timeStr.substring(11, 13));
+                int code = codes.get(idx).asInt();
+                double temp = Math.round(temps.get(idx).asDouble() * 10.0) / 10.0;
+                result.add(new WeatherData.HourlyForecast(hour, weatherCodeToIcon(code), temp));
+            }
+        } catch (Exception ignored) {}
+        return result;
+    }
+
+    private String weatherCodeToIcon(int code) {
+        if (code == 0)                               return "☀️";
+        if (code <= 2)                               return "🌤️";
+        if (code <= 3)                               return "☁️";
+        if (code == 45 || code == 48)                return "🌫️";
+        if (code >= 51 && code <= 57)                return "🌦️";
+        if (code >= 61 && code <= 67)                return "🌧️";
+        if (code >= 71 && code <= 77)                return "❄️";
+        if (code >= 80 && code <= 82)                return "🌧️";
+        if (code == 85 || code == 86)                return "❄️";
+        if (code == 95)                              return "⛈️";
+        if (code == 96 || code == 99)                return "⛈️";
+        return "🌡️";
     }
 
     private boolean detectIsDark(JsonNode root) {

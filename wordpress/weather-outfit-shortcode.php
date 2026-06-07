@@ -18,7 +18,7 @@ function vader_klader_shortcode() {
     (function() {
         var lat = null, lon = null;
         var uid = '<?php echo $uid; ?>';
-        var labelMap = { 'buss': 'Buss', 'tåg': 'Tåg', 'cykel': 'Cykel', 'bil': 'Bil', 'gång': 'Gång' };
+        var labelMap = { 'buss': 'Buss &#128652;', 'tåg': 'Tåg &#128646;', 'cykel': 'Cykel &#128690;', 'bil': 'Bil &#128663;', 'gång': 'Gång &#128694;' };
         var CACHE_KEY = 'vk_last_result';
         var CACHE_TTL = 30 * 60 * 1000;
         var countdownInterval = null;
@@ -112,6 +112,21 @@ function vader_klader_shortcode() {
                 el('forecast-text').textContent = data.forecastWarning;
                 el('forecast-box').style.display = 'block';
             }
+            var strip = el('hourly-strip');
+            if (data.hourlyForecast && data.hourlyForecast.length > 0) {
+                var html = '';
+                data.hourlyForecast.forEach(function(h) {
+                    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">' +
+                            '<span style="font-size:11px;color:#90caf9;">' + (h.hour < 10 ? '0' : '') + h.hour + ':00</span>' +
+                            '<span style="font-size:22px;line-height:1;">' + h.icon + '</span>' +
+                            '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(h.temperature) + '&deg;</span>' +
+                            '</div>';
+                });
+                strip.innerHTML = html;
+                strip.style.display = 'flex';
+            } else {
+                strip.style.display = 'none';
+            }
             show('result');
         }
 
@@ -198,6 +213,8 @@ function vader_klader_shortcode() {
             el('forecast-box').style.display = 'none';
             el('uv-row').style.display = 'none';
             el('feelslike-warn').style.display = 'none';
+            el('hourly-strip').style.display = 'none';
+            el('hourly-strip').innerHTML = '';
             show('step-transport');
         };
 
@@ -447,6 +464,7 @@ function vader_klader_shortcode() {
                 <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
                     &#9888; <span id="<?php echo $uid; ?>-forecast-text"></span>
                 </div>
+                <div id="<?php echo $uid; ?>-hourly-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; margin-top:12px; padding:10px 8px; background:rgba(255,255,255,0.05); border-radius:6px;"></div>
             </div>
             <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
                 <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">AI-kl&auml;dforslag &mdash; <span id="<?php echo $uid; ?>-transport-label"></span></h3>
