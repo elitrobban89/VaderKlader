@@ -234,6 +234,8 @@ function vader_klader_shortcode() {
         var lat = null, lon = null;
         var uid = '<?php echo $uid; ?>';
         var labelMap = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗', 'gång': 'Gång 🚶' };
+        var CACHE_KEY = 'vk_last_result';
+        var CACHE_TTL = 30 * 60 * 1000;
 
         function el(suffix) { return document.getElementById(uid + '-' + suffix); }
 
@@ -247,6 +249,42 @@ function vader_klader_shortcode() {
             el('error').textContent = msg;
             show('error');
             setTimeout(function() { el('step-start').style.display = 'block'; }, 100);
+        }
+
+        function displayResult(data, transport) {
+            el('transport-label').textContent = labelMap[transport] || transport;
+            el('temp').textContent     = data.temperature.toFixed(1);
+            el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '–';
+            el('wind').textContent     = data.windSpeed.toFixed(1);
+            el('winddir').textContent  = data.windDirection || '';
+            el('humidity').textContent = Math.round(data.humidity);
+            el('precip').textContent   = data.precipitationDescription;
+            el('uv-row').style.display = 'none';
+            if (data.uvIndex != null && data.uvIndex >= 3) {
+                el('uv').textContent = data.uvIndex.toFixed(0);
+                el('uv-row').style.display = 'block';
+            }
+            el('outfit').textContent = data.outfitSuggestion;
+            el('forecast-box').style.display = 'none';
+            if (data.forecastWarning) {
+                el('forecast-text').textContent = data.forecastWarning;
+                el('forecast-box').style.display = 'block';
+            }
+            show('result');
+        }
+
+        function saveCache(transport, data) {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ transport: transport, data: data, timestamp: Date.now() }));
+            } catch(e) {}
+        }
+
+        function loadCache() {
+            try {
+                var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (cached && Date.now() - cached.timestamp < CACHE_TTL) return cached;
+            } catch(e) {}
+            return null;
         }
 
         window[uid + '_start'] = function() {
@@ -264,7 +302,6 @@ function vader_klader_shortcode() {
 
         window[uid + '_select'] = function(transport) {
             show('loading-outfit');
-            el('transport-label').textContent = labelMap[transport] || transport;
 
             var controller = new AbortController();
             var timeout = setTimeout(function() { controller.abort(); }, 30000);
@@ -280,24 +317,8 @@ function vader_klader_shortcode() {
                     });
                 })
                 .then(function(data) {
-                    el('temp').textContent     = data.temperature.toFixed(1);
-                    el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '–';
-                    el('wind').textContent     = data.windSpeed.toFixed(1);
-                    el('winddir').textContent  = data.windDirection || '';
-                    el('humidity').textContent = Math.round(data.humidity);
-                    el('precip').textContent   = data.precipitationDescription;
-                    if (data.uvIndex != null && data.uvIndex >= 3) {
-                        el('uv').textContent = data.uvIndex.toFixed(0);
-                        el('uv-row').style.display = 'block';
-                    }
-                    el('outfit').textContent   = data.outfitSuggestion;
-                    if (data.forecastWarning) {
-                        el('forecast-text').textContent = data.forecastWarning;
-                        el('forecast-box').style.display = 'block';
-                    } else {
-                        el('forecast-box').style.display = 'none';
-                    }
-                    show('result');
+                    saveCache(transport, data);
+                    displayResult(data, transport);
                 })
                 .catch(function(err) {
                     clearTimeout(timeout);
@@ -316,7 +337,12 @@ function vader_klader_shortcode() {
         };
 
         document.addEventListener('DOMContentLoaded', function() {
-            if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+            var cached = loadCache();
+            if (cached) {
+                lat = cached.data.lat;
+                lon = cached.data.lon;
+                displayResult(cached.data, cached.transport);
+            } else if (new URLSearchParams(window.location.search).get('autostart') === '1') {
                 window[uid + '_start']();
             }
         });
