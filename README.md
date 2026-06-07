@@ -7,20 +7,14 @@ AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPre
 GPS → välj färdmedel (Buss / Tåg / Cykel / Bil / Gång) → väderdata hämtas → AI-klädförslag visas
 
 ## UI
-Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ 🌧️ ❄️ ⛅) och texten "Väderbaserade Klädförslag" mot mörk blå bakgrund — mobilanpassad med media query under 420px. Startknappen har pulserande glow, shimmer-effekt och float-animation. Mörkt färgtema på väder- och klädförslagsrutorna.
+Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ 🌧️ ❄️ ⛅) mot mörk blå bakgrund — mobilanpassad med media query under 420px. Startknappen har pulserande glow, shimmer-effekt och float-animation. Väder- och klädförslagsrutorna har mörkt färgtema med Groq-badge.
 
-## Prognos
-Hämtar även timprognos för de nästa 4 timmarna. Om regn eller snö väntas nämner AI:n det i klädförslaget med ungefärlig tid, t.ex. *"Ta med ett paraply — regn väntas om ca 2 timmar (ca kl 16:00)"*.
+## Funktioner
 
-Testat mot Mexico City (klart nu, duggregn om 3 timmar) — AI:n svarade korrekt med regnkappa, vattentäta skor och paraply-rekommendation.
-
-Testat mot Stockholm med Llama 3.3 70B — naturlig och korrekt svenska för alla färdmedel:
-- **Cykel**: fleecejacka, tights, vindskydd
-- **Buss**: lagerklädsel, vattentäta skor vid hållplatsen
-- **Gång**: linneblus, shorts, handskar mot vinden
-- **Gång med regnprognos** (Mexico City, regn om 3h): *"OBS: Regn väntas kl 15:00 — ta med regnkläder eller ett paraply"* + regnkappa och paraply rekommenderades
-- **Bil med regnprognos**: vattenavvisande jacka + paraply för promenaden till/från bilen
-- **Tåg med regnprognos**: lagerklädsel för varm vagn + *"ta med paraply om du är ute efter kl 15:00"*
+- **Upplevd temperatur** — Open-Meteo `apparent_temperature` visas i väderkortet och skickas till AI:n för mer relevanta klädråd
+- **Prognos** — timprognos för de nästa 4 timmarna. Om regn eller snö väntas nämner AI:n det med ungefärlig tid, t.ex. *"Ta med ett paraply — regn väntas om ca 2 timmar (ca kl 16:00)"*
+- **IP-begränsning** — max 10 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
+- **Caching** — identisk väder + färdmedel-kombination cachas i 30 minuter, sparar tokens och ger snabbare svar
 
 ## Stack
 
