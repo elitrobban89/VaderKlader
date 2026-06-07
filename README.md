@@ -59,8 +59,9 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 
 UptimeRobot pingar backenden var 5:e minut för att förhindra att Render-tjänsten somnar:
 ```
-https://vaderklader-1.onrender.com/api/weather-outfit?lat=59.33&lon=18.06&transport=gång
+https://vaderklader-1.onrender.com/api/health
 ```
+(Använd `/api/health` — inte `/api/weather-outfit` — annars förbrukas Groq-tokens i onödan.)
 
 ## Live
 
