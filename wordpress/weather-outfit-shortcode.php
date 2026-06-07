@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.2
+ * Version: 2.3
  * Author: elitrobban.se
  */
 
@@ -10,6 +10,217 @@ define('VADER_KLADER_API_URL', 'https://vaderklader-1.onrender.com/api/weather-o
 
 function vader_klader_shortcode() {
     $uid = 'vk_' . substr(md5(uniqid('', true)), 0, 8);
+    $api_url = VADER_KLADER_API_URL;
+
+    // JavaScript goes via wp_footer to avoid the_content filters converting && to &#038;&#038;
+    add_action('wp_footer', function() use ($uid, $api_url) { ?>
+    <script>
+    (function() {
+        var lat = null, lon = null;
+        var uid = '<?php echo $uid; ?>';
+        var labelMap = { 'buss': 'Buss', 'tåg': 'Tåg', 'cykel': 'Cykel', 'bil': 'Bil', 'gång': 'Gång' };
+        var CACHE_KEY = 'vk_last_result';
+        var CACHE_TTL = 30 * 60 * 1000;
+        var countdownInterval = null;
+
+        function el(suffix) { return document.getElementById(uid + '-' + suffix); }
+
+        function show(suffix) {
+            ['step-start','loading-gps','step-transport','loading-outfit','result','no-gps','error']
+                .forEach(function(p) { el(p).style.display = 'none'; });
+            el(suffix).style.display = 'block';
+        }
+
+        function showError(msg) {
+            clearInterval(countdownInterval);
+            el('error').textContent = msg;
+            show('error');
+            el('step-start').style.display = 'block';
+        }
+
+        function showCountdown(seconds) {
+            clearInterval(countdownInterval);
+            var end = Date.now() + seconds * 1000;
+            show('error');
+            var tick = function() {
+                var left = Math.ceil((end - Date.now()) / 1000);
+                if (left <= 0) {
+                    clearInterval(countdownInterval);
+                    el('error').style.display = 'none';
+                    show('step-start');
+                    return;
+                }
+                var mins = Math.floor(left / 60);
+                var secs = left % 60;
+                el('error').textContent = 'For manga forfrAgningar. Forsok igen om ' +
+                    (mins > 0 ? mins + ' min ' : '') + secs + ' sek.';
+            };
+            tick();
+            countdownInterval = setInterval(tick, 1000);
+        }
+
+        function updateRateIndicator(remaining, limit) {
+            limit = isNaN(limit) ? 20 : limit;
+            try { localStorage.setItem('vk_rate_remaining', remaining); localStorage.setItem('vk_rate_limit', limit); } catch(e) {}
+            var elem = el('rate-info');
+            if (!elem) return;
+            elem.style.display = 'inline';
+            var color = remaining <= 3 ? '#ff7043' : remaining <= 6 ? '#FFC107' : '#888';
+            elem.style.color = color;
+            elem.textContent = remaining + '/' + limit + ' anrop kvar' + (remaining <= 3 ? ' (!)' : '');
+        }
+
+        function displayResult(data, transport) {
+            el('transport-label').textContent = labelMap[transport] || transport;
+            el('temp').textContent     = data.temperature.toFixed(1);
+            el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '-';
+            el('wind').textContent     = data.windSpeed.toFixed(1);
+            el('winddir').textContent  = data.windDirection || '';
+            el('humidity').textContent = Math.round(data.humidity);
+            el('precip').textContent   = data.precipitationDescription;
+            el('uv-row').style.display = 'none';
+            if (data.uvIndex != null) {
+                if (data.uvIndex >= 3) {
+                    el('uv').textContent = data.uvIndex.toFixed(0);
+                    el('uv-row').style.display = 'block';
+                }
+            }
+            el('outfit').textContent = data.outfitSuggestion;
+            el('forecast-box').style.display = 'none';
+            if (data.forecastWarning) {
+                el('forecast-text').textContent = data.forecastWarning;
+                el('forecast-box').style.display = 'block';
+            }
+            show('result');
+        }
+
+        function saveCache(transport, data) {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ transport: transport, data: data, timestamp: Date.now() }));
+            } catch(e) {}
+        }
+
+        function loadCache() {
+            try {
+                var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (cached) {
+                    if (Date.now() - cached.timestamp < CACHE_TTL) return cached;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        window[uid + '_start'] = function() {
+            show('loading-gps');
+            if (!navigator.geolocation) { showError('Din webbläsare stodjer inte GPS.'); return; }
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    lat = pos.coords.latitude;
+                    lon = pos.coords.longitude;
+                    show('step-transport');
+                },
+                function() { show('no-gps'); }
+            );
+        };
+
+        window[uid + '_select'] = function(transport) {
+            show('loading-outfit');
+
+            var controller = new AbortController();
+            var timeout = setTimeout(function() { controller.abort(); }, 30000);
+
+            fetch('<?php echo $api_url; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport), { signal: controller.signal })
+                .then(function(r) {
+                    clearTimeout(timeout);
+                    var remaining = parseInt(r.headers.get('X-RateLimit-Remaining'));
+                    var limit     = parseInt(r.headers.get('X-RateLimit-Limit'));
+                    return r.json().then(function(data) {
+                        if (r.status === 429) {
+                            if (data.retryAfterSeconds) {
+                                showCountdown(data.retryAfterSeconds);
+                                return null;
+                            }
+                        }
+                        if (!r.ok) {
+                            throw new Error(data.error || ('HTTP ' + r.status));
+                        }
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        if (!isNaN(remaining)) updateRateIndicator(remaining, limit);
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    if (!data) return;
+                    saveCache(transport, data);
+                    displayResult(data, transport);
+                })
+                .catch(function(err) {
+                    clearTimeout(timeout);
+                    if (err.name === 'AbortError') {
+                        showError('Servern svarade inte inom 30 sekunder. Forsok igen.');
+                    } else {
+                        showError(err.message || 'Kunde inte na servern. Forsok igen senare.');
+                    }
+                });
+        };
+
+        window[uid + '_reset'] = function() {
+            el('forecast-box').style.display = 'none';
+            el('uv-row').style.display = 'none';
+            show('step-transport');
+        };
+
+        window[uid + '_citySearch'] = function() {
+            var input = el('city-input');
+            var query = input ? input.value.trim() : '';
+            if (!query) return;
+            var cityErr = el('city-error');
+            cityErr.style.display = 'none';
+            input.disabled = true;
+
+            fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1', {
+                headers: { 'Accept-Language': 'sv' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(results) {
+                input.disabled = false;
+                if (!results) { results = []; }
+                if (results.length === 0) {
+                    cityErr.textContent = 'Hittade ingen ort. Forsok igen.';
+                    cityErr.style.display = 'block';
+                    return;
+                }
+                lat = parseFloat(results[0].lat);
+                lon = parseFloat(results[0].lon);
+                show('step-transport');
+            })
+            .catch(function() {
+                input.disabled = false;
+                cityErr.textContent = 'Kunde inte soka efter ort. Kontrollera uppkopplingen.';
+                cityErr.style.display = 'block';
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var cached = loadCache();
+            if (cached) {
+                lat = cached.data.lat;
+                lon = cached.data.lon;
+                displayResult(cached.data, cached.transport);
+                try {
+                    var r = localStorage.getItem('vk_rate_remaining');
+                    var l = localStorage.getItem('vk_rate_limit');
+                    if (r !== null) updateRateIndicator(parseInt(r), parseInt(l) || 20);
+                } catch(e) {}
+            } else if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+                window[uid + '_start']();
+            }
+        });
+    })();
+    </script>
+    <?php }, 99);
 
     ob_start(); ?>
     <style>
@@ -152,296 +363,99 @@ function vader_klader_shortcode() {
         <div class="vk-header">
             <div class="vk-header-icons">
                 <div class="vk-header-icons-inner">
-                    <span class="vk-header-icon">☀️</span>
-                    <span class="vk-header-icon">🌤️</span>
-                    <span class="vk-header-icon">🌧️</span>
-                    <span class="vk-header-icon">❄️</span>
-                    <span class="vk-header-icon">⛅</span>
-                    <span class="vk-header-icon">☀️</span>
-                    <span class="vk-header-icon">🌤️</span>
-                    <span class="vk-header-icon">🌧️</span>
-                    <span class="vk-header-icon">❄️</span>
-                    <span class="vk-header-icon">⛅</span>
+                    <span class="vk-header-icon">&#9728;&#65039;</span>
+                    <span class="vk-header-icon">&#127780;&#65039;</span>
+                    <span class="vk-header-icon">&#127783;&#65039;</span>
+                    <span class="vk-header-icon">&#10052;&#65039;</span>
+                    <span class="vk-header-icon">&#9925;</span>
+                    <span class="vk-header-icon">&#9728;&#65039;</span>
+                    <span class="vk-header-icon">&#127780;&#65039;</span>
+                    <span class="vk-header-icon">&#127783;&#65039;</span>
+                    <span class="vk-header-icon">&#10052;&#65039;</span>
+                    <span class="vk-header-icon">&#9925;</span>
                 </div>
             </div>
             <div class="vk-header-text">
-                <span class="vk-header-title">Väder &amp; Kläder</span>
-                <span class="vk-header-sub">Realtidsväder · Din plats · <span class="vk-groq-badge">⚡ Groq AI</span></span>
+                <span class="vk-header-title">V&auml;der &amp; Kl&auml;der</span>
+                <span class="vk-header-sub">Realtidsv&auml;der &middot; Din plats &middot; <span class="vk-groq-badge">&#9889; Groq AI</span></span>
             </div>
         </div>
 
         <div id="<?php echo $uid; ?>-step-start">
             <button onclick="window['<?php echo $uid; ?>_start']()" class="vk-start-btn">
-                ☀️ Hämta klädförslag för min plats
+                H&auml;mta kl&auml;dforslag
             </button>
         </div>
 
         <div id="<?php echo $uid; ?>-loading-gps" style="display:none;">
-            <p>📡 Hämtar din position...</p>
+            <p>H&auml;mtar din position...</p>
         </div>
 
         <div id="<?php echo $uid; ?>-step-transport" style="display:none;">
             <p style="margin-bottom:12px; font-size:15px;"><strong>Hur tar du dig fram idag?</strong></p>
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                <button onclick="window['<?php echo $uid; ?>_select']('buss')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚌 Buss</button>
-                <button onclick="window['<?php echo $uid; ?>_select']('tåg')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚆 Tåg</button>
-                <button onclick="window['<?php echo $uid; ?>_select']('cykel')" style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚲 Cykel</button>
-                <button onclick="window['<?php echo $uid; ?>_select']('bil')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚗 Bil</button>
-                <button onclick="window['<?php echo $uid; ?>_select']('gång')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">🚶 Gång</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('buss')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128652; Buss</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('tåg')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128646; T&aring;g</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('cykel')" style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128690; Cykel</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('bil')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128663; Bil</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('gång')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128694; G&aring;ng</button>
             </div>
         </div>
 
         <div id="<?php echo $uid; ?>-loading-outfit" style="display:none;">
-            <p>🤖 Hämtar klädförslag...</p>
+            <p>H&auml;mtar kl&auml;dforslag...</p>
         </div>
 
         <div id="<?php echo $uid; ?>-result" style="display:none;">
             <div style="background:#1a3a5c; border-left:4px solid #64b5f6; padding:16px; border-radius:6px; margin-bottom:12px;">
-                <h3 style="margin:0 0 8px 0; color:#90caf9;">🌡 Väder just nu</h3>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>°C &nbsp;<span style="color:#90caf9; font-size:13px;">(upplevd: <span id="<?php echo $uid; ?>-feels"></span>°C)</span></p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span style="color:#90caf9; font-size:13px;">från <span id="<?php echo $uid; ?>-winddir"></span></span></p>
+                <h3 style="margin:0 0 8px 0; color:#90caf9;">V&auml;der just nu</h3>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>&deg;C &nbsp;<span style="color:#90caf9; font-size:13px;">(upplevd: <span id="<?php echo $uid; ?>-feels"></span>&deg;C)</span></p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span style="color:#90caf9; font-size:13px;">fr&aring;n <span id="<?php echo $uid; ?>-winddir"></span></span></p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbord:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
                 <p id="<?php echo $uid; ?>-uv-row" style="margin:4px 0; display:none; color:#e3f2fd;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
                 <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
-                    ⚠️ <span id="<?php echo $uid; ?>-forecast-text"></span>
+                    &#9888; <span id="<?php echo $uid; ?>-forecast-text"></span>
                 </div>
             </div>
             <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
-                <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">👗 AI-klädförslag — <span id="<?php echo $uid; ?>-transport-label"></span></h3>
+                <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">AI-kl&auml;dforslag &mdash; <span id="<?php echo $uid; ?>-transport-label"></span></h3>
                 <p id="<?php echo $uid; ?>-outfit" style="margin:0 0 14px 0; line-height:1.6; color:#fff8e1;"></p>
                 <a href="https://groq.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(245,80,54,0.15);border:1px solid rgba(245,80,54,0.4);border-radius:20px;font-size:11px;font-weight:700;color:#ff7a5c;letter-spacing:0.4px;text-decoration:none;">
-                    ⚡ Drivs av Groq AI
+                    &#9889; Drivs av Groq AI
                 </a>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:6px;">
                 <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
-                    ↺ Välj nytt färdmedel
+                    &#8635; V&auml;lj nytt f&auml;rdmedel
                 </button>
                 <span id="<?php echo $uid; ?>-rate-info" style="display:none; font-size:11px; color:#aaa;"></span>
             </div>
         </div>
 
         <div id="<?php echo $uid; ?>-no-gps" style="display:none;">
-            <p style="font-size:14px; margin-bottom:14px; color:#ccc;">📍 Kunde inte hämta din position via GPS.</p>
+            <p style="font-size:14px; margin-bottom:14px; color:#ccc;">Kunde inte h&auml;mta din position via GPS.</p>
             <div style="margin-bottom:16px;">
-                <p style="font-size:14px; margin-bottom:8px; color:#ccc;"><strong>Sök efter din stad:</strong></p>
+                <p style="font-size:14px; margin-bottom:8px; color:#ccc;"><strong>Sok efter din stad:</strong></p>
                 <div style="display:flex; gap:8px;">
                     <input id="<?php echo $uid; ?>-city-input" type="text" placeholder="t.ex. Stockholm"
                         style="flex:1; padding:10px 14px; border-radius:6px; border:1px solid #555; background:#1a2030; color:#fff; font-size:14px; outline:none;"
                         onkeydown="if(event.key==='Enter') window['<?php echo $uid; ?>_citySearch']()" />
                     <button onclick="window['<?php echo $uid; ?>_citySearch']()"
                         style="background:#2196F3; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;">
-                        Sök
+                        Sok
                     </button>
                 </div>
                 <p id="<?php echo $uid; ?>-city-error" style="display:none; color:#ef5350; font-size:13px; margin-top:6px;"></p>
             </div>
             <button onclick="window['<?php echo $uid; ?>_start']()"
                 style="background:none; border:1px solid #666; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#aaa;">
-                📡 Försök med GPS igen
+                Forsok med GPS igen
             </button>
         </div>
 
         <div id="<?php echo $uid; ?>-error" style="display:none; background:#3a1a1a; border-left:4px solid #ef5350; padding:14px 16px; border-radius:6px; color:#ffcdd2; font-size:14px; line-height:1.5;"></div>
     </div>
-
-    <script>
-    (function() {
-        var lat = null, lon = null;
-        var uid = '<?php echo $uid; ?>';
-        var labelMap = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗', 'gång': 'Gång 🚶' };
-        var CACHE_KEY = 'vk_last_result';
-        var CACHE_TTL = 30 * 60 * 1000;
-        var countdownInterval = null;
-
-        function el(suffix) { return document.getElementById(uid + '-' + suffix); }
-
-        function show(suffix) {
-            ['step-start','loading-gps','step-transport','loading-outfit','result','no-gps','error']
-                .forEach(function(p) { el(p).style.display = 'none'; });
-            el(suffix).style.display = 'block';
-        }
-
-        function showError(msg) {
-            clearInterval(countdownInterval);
-            el('error').textContent = msg;
-            show('error');
-            el('step-start').style.display = 'block';
-        }
-
-        function showCountdown(seconds) {
-            clearInterval(countdownInterval);
-            var end = Date.now() + seconds * 1000;
-            show('error');
-            function tick() {
-                var left = Math.ceil((end - Date.now()) / 1000);
-                if (left <= 0) {
-                    clearInterval(countdownInterval);
-                    el('error').style.display = 'none';
-                    show('step-start');
-                    return;
-                }
-                var mins = Math.floor(left / 60);
-                var secs = left % 60;
-                el('error').textContent = '⏳ IP-gränsen nådd. Försök igen om ' +
-                    (mins > 0 ? mins + ' min ' : '') + secs + ' sek.';
-            }
-            tick();
-            countdownInterval = setInterval(tick, 1000);
-        }
-
-        function updateRateIndicator(remaining, limit) {
-            limit = isNaN(limit) ? 20 : limit;
-            try { localStorage.setItem('vk_rate_remaining', remaining); localStorage.setItem('vk_rate_limit', limit); } catch(e) {}
-            var elem = el('rate-info');
-            if (!elem) return;
-            elem.style.display = 'inline';
-            var color = remaining <= 3 ? '#ff7043' : remaining <= 6 ? '#FFC107' : '#888';
-            elem.style.color = color;
-            elem.textContent = remaining + '/' + limit + ' anrop kvar' + (remaining <= 3 ? ' ⚠️' : '');
-        }
-
-        function displayResult(data, transport) {
-            el('transport-label').textContent = labelMap[transport] || transport;
-            el('temp').textContent     = data.temperature.toFixed(1);
-            el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '–';
-            el('wind').textContent     = data.windSpeed.toFixed(1);
-            el('winddir').textContent  = data.windDirection || '';
-            el('humidity').textContent = Math.round(data.humidity);
-            el('precip').textContent   = data.precipitationDescription;
-            el('uv-row').style.display = 'none';
-            if (data.uvIndex != null && data.uvIndex >= 3) {
-                el('uv').textContent = data.uvIndex.toFixed(0);
-                el('uv-row').style.display = 'block';
-            }
-            el('outfit').textContent = data.outfitSuggestion;
-            el('forecast-box').style.display = 'none';
-            if (data.forecastWarning) {
-                el('forecast-text').textContent = data.forecastWarning;
-                el('forecast-box').style.display = 'block';
-            }
-            show('result');
-        }
-
-        function saveCache(transport, data) {
-            try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ transport: transport, data: data, timestamp: Date.now() }));
-            } catch(e) {}
-        }
-
-        function loadCache() {
-            try {
-                var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                if (cached && Date.now() - cached.timestamp < CACHE_TTL) return cached;
-            } catch(e) {}
-            return null;
-        }
-
-        window[uid + '_start'] = function() {
-            show('loading-gps');
-            if (!navigator.geolocation) { showError('Din webbläsare stödjer inte GPS.'); return; }
-            navigator.geolocation.getCurrentPosition(
-                function(pos) {
-                    lat = pos.coords.latitude;
-                    lon = pos.coords.longitude;
-                    show('step-transport');
-                },
-                function() { show('no-gps'); }
-            );
-        };
-
-        window[uid + '_select'] = function(transport) {
-            show('loading-outfit');
-
-            var controller = new AbortController();
-            var timeout = setTimeout(function() { controller.abort(); }, 30000);
-
-            fetch('<?php echo VADER_KLADER_API_URL; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport), { signal: controller.signal })
-                .then(function(r) {
-                    clearTimeout(timeout);
-                    var remaining = parseInt(r.headers.get('X-RateLimit-Remaining'));
-                    var limit     = parseInt(r.headers.get('X-RateLimit-Limit'));
-                    return r.json().then(function(data) {
-                        if (r.status === 429 && data.retryAfterSeconds) {
-                            showCountdown(data.retryAfterSeconds);
-                            return null;
-                        }
-                        if (!r.ok || data.error) {
-                            throw new Error(data.error || ('HTTP ' + r.status));
-                        }
-                        if (!isNaN(remaining)) updateRateIndicator(remaining, limit);
-                        return data;
-                    });
-                })
-                .then(function(data) {
-                    if (!data) return;
-                    saveCache(transport, data);
-                    displayResult(data, transport);
-                })
-                .catch(function(err) {
-                    clearTimeout(timeout);
-                    if (err.name === 'AbortError') {
-                        showError('Servern svarade inte inom 30 sekunder. Försök igen.');
-                    } else {
-                        showError(err.message || 'Kunde inte nå servern. Försök igen senare.');
-                    }
-                });
-        };
-
-        window[uid + '_reset'] = function() {
-            el('forecast-box').style.display = 'none';
-            el('uv-row').style.display = 'none';
-            show('step-transport');
-        };
-
-        window[uid + '_citySearch'] = function() {
-            var input = el('city-input');
-            var query = input ? input.value.trim() : '';
-            if (!query) return;
-            var cityErr = el('city-error');
-            cityErr.style.display = 'none';
-            input.disabled = true;
-
-            fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1', {
-                headers: { 'Accept-Language': 'sv' }
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(results) {
-                input.disabled = false;
-                if (!results || results.length === 0) {
-                    cityErr.textContent = 'Hittade ingen ort med det namnet. Försök igen.';
-                    cityErr.style.display = 'block';
-                    return;
-                }
-                lat = parseFloat(results[0].lat);
-                lon = parseFloat(results[0].lon);
-                show('step-transport');
-            })
-            .catch(function() {
-                input.disabled = false;
-                cityErr.textContent = 'Kunde inte söka efter ort. Kontrollera din uppkoppling.';
-                cityErr.style.display = 'block';
-            });
-        };
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var cached = loadCache();
-            if (cached) {
-                lat = cached.data.lat;
-                lon = cached.data.lon;
-                displayResult(cached.data, cached.transport);
-                try {
-                    var r = localStorage.getItem('vk_rate_remaining');
-                    var l = localStorage.getItem('vk_rate_limit');
-                    if (r !== null) updateRateIndicator(parseInt(r), parseInt(l) || 20);
-                } catch(e) {}
-            } else if (new URLSearchParams(window.location.search).get('autostart') === '1') {
-                window[uid + '_start']();
-            }
-        });
-    })();
-    </script>
     <?php
     return ob_get_clean();
 }
