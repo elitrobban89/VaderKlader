@@ -39,6 +39,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Dimma** — weather code 45/48 ger "Dimma" i väderkortet och AI:n ger råd om synlighet
 - **Rate limit-headers** — `X-RateLimit-Remaining` och `X-RateLimit-Limit` i varje svar, exponerade via CORS
 - **Retry-After** — 429-svar inkluderar `retryAfterSeconds` och `Retry-After`-header med exakt väntetid
+- **WordPress content-filter fix** — JavaScript-blocket ligger i `wp_footer`-action (priority 99) för att undvika att WordPress `the_content`-filter konverterar `&&` till `&#038;&#038;` och bryter koden
 
 ## Stack
 
