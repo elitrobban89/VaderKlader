@@ -18,6 +18,8 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Groq-kvalitet** — system-prompt sätter persona, `temperature: 0.4` för konsistenta svar, `max_tokens: 200` håller svaren koncisa
 - **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten
 - **Färdmedel** — alla fem alternativ (Buss, Tåg, Cykel, Bil, Gång) har specifik kontext för AI:n
+- **UV-index** — visas i väderkortet och skickas till AI:n vid UV ≥ 3, ger råd om solskydd och solhatt
+- **Cache-hantering** — max 500 entries, äldsta hälften rensas automatiskt när taket nås
 
 ## Stack
 
