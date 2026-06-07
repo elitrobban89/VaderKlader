@@ -21,6 +21,8 @@ function vader_klader_shortcode() {
         var labelMap = { 'buss': 'Buss &#128652;', 'tåg': 'Tåg &#128646;', 'cykel': 'Cykel &#128690;', 'bil': 'Bil &#128663;', 'gång': 'Gång &#128694;' };
         var CACHE_KEY = 'vk_last_result';
         var CACHE_TTL = 30 * 60 * 1000;
+        var GPS_KEY = 'vk_gps_position';
+        var GPS_TTL = 6 * 60 * 60 * 1000;
         var countdownInterval = null;
         var currentTransport = null;
 
@@ -170,6 +172,18 @@ function vader_klader_shortcode() {
             } catch(e) {}
         }
 
+        function saveGpsPosition(la, lo) {
+            try { localStorage.setItem(GPS_KEY, JSON.stringify({ lat: la, lon: lo, timestamp: Date.now() })); } catch(e) {}
+        }
+
+        function loadGpsPosition() {
+            try {
+                var saved = JSON.parse(localStorage.getItem(GPS_KEY));
+                if (saved && Date.now() - saved.timestamp < GPS_TTL) return saved;
+            } catch(e) {}
+            return null;
+        }
+
         function loadCache() {
             try {
                 var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -187,6 +201,7 @@ function vader_klader_shortcode() {
                 function(pos) {
                     lat = pos.coords.latitude;
                     lon = pos.coords.longitude;
+                    saveGpsPosition(lat, lon);
                     show('step-transport');
                 },
                 function() { show('no-gps'); }
@@ -279,6 +294,7 @@ function vader_klader_shortcode() {
                 }
                 lat = parseFloat(results[0].lat);
                 lon = parseFloat(results[0].lon);
+                saveGpsPosition(lat, lon);
                 show('step-transport');
             })
             .catch(function() {
@@ -299,8 +315,15 @@ function vader_klader_shortcode() {
                     var l = localStorage.getItem('vk_rate_limit');
                     if (r !== null) updateRateIndicator(parseInt(r), parseInt(l) || 20);
                 } catch(e) {}
-            } else if (new URLSearchParams(window.location.search).get('autostart') === '1') {
-                window[uid + '_start']();
+            } else {
+                var savedGps = loadGpsPosition();
+                if (savedGps) {
+                    lat = savedGps.lat;
+                    lon = savedGps.lon;
+                    show('step-transport');
+                } else if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+                    window[uid + '_start']();
+                }
             }
         });
     })();
