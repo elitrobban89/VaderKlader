@@ -25,6 +25,9 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Groq-status i health** — `GET /api/health` returnerar `groq: quota_exceeded` och `retryIn` när dagsgränsen är nådd
 - **Mörker-detection** — sunrise/sunset från Open-Meteo, AI:n rekommenderar reflexer efter mörkrets inbrott
 - **Reset-fix** — prognos-varning och UV-rad döljs korrekt när användaren väljer nytt färdmedel
+- **Koordinatvalidering** — ogiltiga lat/lon ger 400 Bad Request med tydligt felmeddelande
+- **Timeouts** — 5s connect / 10s read på Open-Meteo och Groq, inga frysta requests
+- **Årstidskontext** — aktuell månad skickas till AI:n för säsongsan­passade klädråd
 
 ## Stack
 
