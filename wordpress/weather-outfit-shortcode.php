@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.3
+ * Version: 2.4
  * Author: elitrobban.se
  */
 
@@ -148,7 +148,7 @@ function vader_klader_shortcode() {
             el('daily-strip').style.display = 'none';
             if (data.dailyForecast && data.dailyForecast.length > 0) {
                 var dhtml = '';
-                data.dailyForecast.forEach(function(d) {
+                data.dailyForecast.slice(0, 5).forEach(function(d) {
                     dhtml += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;">' +
                              '<span style="font-size:11px;color:#90caf9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + d.dayName + '</span>' +
                              '<span style="font-size:20px;line-height:1;">' + d.icon + '</span>' +
@@ -485,8 +485,9 @@ function vader_klader_shortcode() {
             </button>
         </div>
 
-        <div id="<?php echo $uid; ?>-loading-gps" style="display:none;">
-            <p>H&auml;mtar din position...</p>
+        <div id="<?php echo $uid; ?>-loading-gps" style="display:none; text-align:center; padding:24px 0;">
+            <div class="vk-spinner"></div>
+            <p style="margin:0; color:#90caf9; font-size:14px;">H&auml;mtar din position...</p>
         </div>
 
         <div id="<?php echo $uid; ?>-step-transport" style="display:none;">
