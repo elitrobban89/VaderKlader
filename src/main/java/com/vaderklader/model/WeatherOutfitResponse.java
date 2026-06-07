@@ -9,6 +9,7 @@ public class WeatherOutfitResponse {
     private double windSpeed;
     private double humidity;
     private String precipitationDescription;
+    private String forecastWarning;
     private String outfitSuggestion;
 
     public WeatherOutfitResponse(double lat, double lon, WeatherData weather, String outfitSuggestion) {
@@ -19,6 +20,7 @@ public class WeatherOutfitResponse {
         this.windSpeed = weather.getWindSpeed();
         this.humidity = weather.getHumidity();
         this.precipitationDescription = weather.getPrecipitationDescription();
+        this.forecastWarning = weather.getForecastWarning();
         this.outfitSuggestion = outfitSuggestion;
     }
 
@@ -29,5 +31,6 @@ public class WeatherOutfitResponse {
     public double getWindSpeed() { return windSpeed; }
     public double getHumidity() { return humidity; }
     public String getPrecipitationDescription() { return precipitationDescription; }
+    public String getForecastWarning() { return forecastWarning; }
     public String getOutfitSuggestion() { return outfitSuggestion; }
 }

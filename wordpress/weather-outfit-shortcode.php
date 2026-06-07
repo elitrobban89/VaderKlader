@@ -202,6 +202,9 @@ function vader_klader_shortcode() {
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s</p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
+                <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
+                    ⚠️ <span id="<?php echo $uid; ?>-forecast-text"></span>
+                </div>
             </div>
             <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
                 <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">👗 AI-klädförslag — <span id="<?php echo $uid; ?>-transport-label"></span></h3>
@@ -282,6 +285,12 @@ function vader_klader_shortcode() {
                     el('humidity').textContent = Math.round(data.humidity);
                     el('precip').textContent   = data.precipitationDescription;
                     el('outfit').textContent   = data.outfitSuggestion;
+                    if (data.forecastWarning) {
+                        el('forecast-text').textContent = data.forecastWarning;
+                        el('forecast-box').style.display = 'block';
+                    } else {
+                        el('forecast-box').style.display = 'none';
+                    }
                     show('result');
                 })
                 .catch(function(err) {

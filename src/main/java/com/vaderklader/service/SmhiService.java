@@ -64,7 +64,7 @@ public class SmhiService {
             }
             if (currentIndex < 0) return null;
 
-            for (int h = 1; h <= 4; h++) {
+            for (int h = 1; h <= 6; h++) {
                 int idx = currentIndex + h;
                 if (idx >= codes.size()) break;
                 int code = codes.get(idx).asInt();

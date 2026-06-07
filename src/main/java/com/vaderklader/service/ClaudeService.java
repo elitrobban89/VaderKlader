@@ -25,17 +25,17 @@ public class ClaudeService {
     @Value("${groq.api.key}")
     private String apiKey;
 
+    private record CacheEntry(String suggestion, long timestamp) {}
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Map<String, long[]> cache = new ConcurrentHashMap<>();
-    // cache value: [0] = timestamp, stored suggestion keyed by cacheKey+"_text" via a separate map
-    private final Map<String, String> cacheText = new ConcurrentHashMap<>();
+    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public String getOutfitSuggestion(WeatherData weather, String transport) {
         String cacheKey = buildCacheKey(weather, transport);
-        long[] entry = cache.get(cacheKey);
-        if (entry != null && System.currentTimeMillis() - entry[0] < CACHE_TTL_MS) {
-            return cacheText.get(cacheKey);
+        CacheEntry entry = cache.get(cacheKey);
+        if (entry != null && System.currentTimeMillis() - entry.timestamp() < CACHE_TTL_MS) {
+            return entry.suggestion();
         }
 
         String prompt = buildPrompt(weather, transport);
@@ -62,8 +62,7 @@ public class ClaudeService {
 
             JsonNode responseJson = objectMapper.readTree(response.getBody());
             String suggestion = responseJson.get("choices").get(0).get("message").get("content").asText();
-            cache.put(cacheKey, new long[]{System.currentTimeMillis()});
-            cacheText.put(cacheKey, suggestion);
+            cache.put(cacheKey, new CacheEntry(suggestion, System.currentTimeMillis()));
             return suggestion;
 
         } catch (HttpClientErrorException e) {
@@ -114,6 +113,10 @@ public class ClaudeService {
             case "bil" -> """
                 Användaren kör bil. Tänk på: kort promenad till/från bilen i väder, \
                 och att det är varmt i bilen — ett ytterplagg som lätt kan tas av är bra.""";
+            case "gång" -> """
+                Användaren går till sitt mål. Tänk på: hela vägen är utomhus, \
+                rörelsefrihet är viktig och temperaturen upplevs annorlunda i rörelse. \
+                Bekväma skor är ett plus att nämna.""";
             default -> "Användaren reser på ett okänt sätt.";
         };
 
