@@ -277,7 +277,7 @@ function vader_klader_shortcode() {
                 })
                 .then(function(data) {
                     el('temp').textContent     = data.temperature.toFixed(1);
-                    el('feels').textContent    = data.feelsLike.toFixed(1);
+                    el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '–';
                     el('wind').textContent     = data.windSpeed.toFixed(1);
                     el('humidity').textContent = Math.round(data.humidity);
                     el('precip').textContent   = data.precipitationDescription;
