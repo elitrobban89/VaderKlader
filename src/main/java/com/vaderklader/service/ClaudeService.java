@@ -126,6 +126,8 @@ public class ClaudeService {
               "\n- Paraply om användaren är ute kortare stunder" +
               "\n- Regnkappa/regnställ om användaren rör sig mycket utomhus (cykel, gång)" +
               "\n- Vattentäta skor eller gummistövlar om kraftigt regn väntas" +
+              "\n- Vid åska: undvik öppna platser, håll sig inomhus om möjligt" +
+              "\n- Vid hagel: skydda huvud och sök skydd — cyklister bör stanna" +
               "\nAvsluta alltid med en mening som börjar med: \"OBS: [typ av nederbörd] väntas [tid] — ta med ...\""
             : "";
 

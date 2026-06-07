@@ -71,8 +71,11 @@ public class SmhiService {
                 if (code >= 51) {
                     String timeStr = times.get(idx).asText();
                     int forecastHour = Integer.parseInt(timeStr.substring(11, 13));
-                    boolean snow = (code >= 71 && code <= 77) || code == 85 || code == 86;
-                    String type = snow ? "Snöfall" : "Regn";
+                    String type;
+                    if (code == 96 || code == 99) type = "Åska med hagel";
+                    else if (code == 95)          type = "Åska";
+                    else if ((code >= 71 && code <= 77) || code == 85 || code == 86) type = "Snöfall";
+                    else                          type = "Regn";
                     return String.format("%s väntas om ca %d timm%s (ca kl %02d:00)",
                         type, h, h == 1 ? "e" : "ar", forecastHour);
                 }
@@ -85,6 +88,8 @@ public class SmhiService {
 
     private int weatherCodeToPrecipCategory(int code) {
         if (code == 0 || code <= 3)  return 0; // Klart/molnigt
+        if (code == 96 || code == 99) return 8; // Åska med hagel
+        if (code == 95)               return 7; // Åska
         if (code == 71 || code == 73 || code == 75 || code == 77 || code == 85 || code == 86) return 1; // Snö
         if (code == 51 || code == 53 || code == 55) return 4; // Duggregn
         if (code == 56 || code == 57) return 6; // Underkylt duggregn

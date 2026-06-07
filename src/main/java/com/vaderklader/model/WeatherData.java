@@ -30,6 +30,8 @@ public class WeatherData {
             case 4 -> "Duggregn";
             case 5 -> "Underkylt regn";
             case 6 -> "Underkylt duggregn";
+            case 7 -> "Åska";
+            case 8 -> "Åska med hagel";
             default -> "Okänd";
         };
     }
