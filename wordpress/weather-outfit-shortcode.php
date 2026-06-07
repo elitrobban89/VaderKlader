@@ -72,7 +72,7 @@ function vader_klader_shortcode() {
         }
 
         function displayResult(data, transport) {
-            el('transport-label').textContent = labelMap[transport] || transport;
+            el('transport-label').innerHTML = labelMap[transport] || transport;
             el('temp').textContent     = data.temperature.toFixed(1);
             el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '-';
             el('wind').textContent     = data.windSpeed.toFixed(1);
@@ -116,10 +116,14 @@ function vader_klader_shortcode() {
             if (data.hourlyForecast && data.hourlyForecast.length > 0) {
                 var html = '';
                 data.hourlyForecast.forEach(function(h) {
-                    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">' +
-                            '<span style="font-size:11px;color:#90caf9;">' + (h.hour < 10 ? '0' : '') + h.hour + ':00</span>' +
+                    var probHtml = (h.precipitationProbability > 0)
+                        ? '<span style="font-size:10px;color:#64b5f6;">' + h.precipitationProbability + '%</span>'
+                        : '<span style="font-size:10px;color:transparent;">0%</span>';
+                    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;">' +
+                            '<span style="font-size:11px;color:#90caf9;">Om ' + h.hoursFromNow + 'h</span>' +
                             '<span style="font-size:22px;line-height:1;">' + h.icon + '</span>' +
                             '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(h.temperature) + '&deg;</span>' +
+                            probHtml +
                             '</div>';
                 });
                 strip.innerHTML = html;
@@ -127,6 +131,29 @@ function vader_klader_shortcode() {
             } else {
                 strip.style.display = 'none';
             }
+
+            el('sunrise-row').style.display = 'none';
+            if (data.sunrise && data.sunset) {
+                el('sunrise-val').textContent = data.sunrise;
+                el('sunset-val').textContent  = data.sunset;
+                el('sunrise-row').style.display = 'block';
+            }
+
+            el('daily-strip').style.display = 'none';
+            if (data.dailyForecast && data.dailyForecast.length > 0) {
+                var dhtml = '';
+                data.dailyForecast.forEach(function(d) {
+                    dhtml += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;">' +
+                             '<span style="font-size:11px;color:#90caf9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + d.dayName + '</span>' +
+                             '<span style="font-size:20px;line-height:1;">' + d.icon + '</span>' +
+                             '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(d.tempMax) + '&deg;</span>' +
+                             '<span style="font-size:11px;color:#90caf9;">' + Math.round(d.tempMin) + '&deg;</span>' +
+                             '</div>';
+                });
+                el('daily-strip').innerHTML = dhtml;
+                el('daily-strip').style.display = 'flex';
+            }
+
             show('result');
         }
 
@@ -213,8 +240,11 @@ function vader_klader_shortcode() {
             el('forecast-box').style.display = 'none';
             el('uv-row').style.display = 'none';
             el('feelslike-warn').style.display = 'none';
+            el('sunrise-row').style.display = 'none';
             el('hourly-strip').style.display = 'none';
             el('hourly-strip').innerHTML = '';
+            el('daily-strip').style.display = 'none';
+            el('daily-strip').innerHTML = '';
             show('step-transport');
         };
 
@@ -458,12 +488,13 @@ function vader_klader_shortcode() {
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>&deg;C &nbsp;<span style="color:#90caf9; font-size:13px;">(upplevd: <span id="<?php echo $uid; ?>-feels"></span>&deg;C)</span></p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span style="color:#90caf9; font-size:13px;">fr&aring;n <span id="<?php echo $uid; ?>-winddir"></span></span></p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbord:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
+                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederb&ouml;rd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
                 <div id="<?php echo $uid; ?>-feelslike-warn" style="display:none; margin-top:8px; padding:6px 10px; background:rgba(100,181,246,0.12); border-left:3px solid #64b5f6; border-radius:4px; color:#90caf9; font-size:13px;"></div>
                 <p id="<?php echo $uid; ?>-uv-row" style="margin:4px 0; display:none; color:#e3f2fd;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
                 <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
                     &#9888; <span id="<?php echo $uid; ?>-forecast-text"></span>
                 </div>
+                <p id="<?php echo $uid; ?>-sunrise-row" style="margin:4px 0; display:none; color:#e3f2fd; font-size:13px;">&#127774; <span id="<?php echo $uid; ?>-sunrise-val"></span> &nbsp;&#127762; <span id="<?php echo $uid; ?>-sunset-val"></span></p>
                 <div id="<?php echo $uid; ?>-hourly-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; margin-top:12px; padding:10px 8px; background:rgba(255,255,255,0.05); border-radius:6px;"></div>
             </div>
             <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
@@ -473,6 +504,7 @@ function vader_klader_shortcode() {
                     &#9889; Drivs av Groq AI
                 </a>
             </div>
+            <div id="<?php echo $uid; ?>-daily-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; margin-top:12px; padding:10px 8px; background:#1a2a3a; border-radius:6px;"></div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:6px;">
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">

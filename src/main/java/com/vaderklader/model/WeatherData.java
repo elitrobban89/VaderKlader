@@ -4,7 +4,8 @@ import java.util.List;
 
 public class WeatherData {
 
-    public record HourlyForecast(int hour, String icon, double temperature) {}
+    public record HourlyForecast(int hoursFromNow, String icon, double temperature, int precipitationProbability) {}
+    public record DailyForecast(String dayName, String icon, double tempMax, double tempMin) {}
 
     private double temperature;
     private double feelsLike;
@@ -16,12 +17,16 @@ public class WeatherData {
     private double uvIndex;
     private boolean isDark;
     private String forecastWarning;
+    private String sunrise;
+    private String sunset;
     private List<HourlyForecast> hourlyForecast;
+    private List<DailyForecast> dailyForecast;
 
     public WeatherData(double temperature, double feelsLike, double windSpeed, String windDirection,
                        double humidity, double precipitation, int precipitationCategory,
                        double uvIndex, boolean isDark, String forecastWarning,
-                       List<HourlyForecast> hourlyForecast) {
+                       String sunrise, String sunset,
+                       List<HourlyForecast> hourlyForecast, List<DailyForecast> dailyForecast) {
         this.temperature = temperature;
         this.feelsLike = feelsLike;
         this.windSpeed = windSpeed;
@@ -32,7 +37,10 @@ public class WeatherData {
         this.uvIndex = uvIndex;
         this.isDark = isDark;
         this.forecastWarning = forecastWarning;
+        this.sunrise = sunrise;
+        this.sunset = sunset;
         this.hourlyForecast = hourlyForecast;
+        this.dailyForecast = dailyForecast;
     }
 
     private String describePrecipitation(int category) {
@@ -82,5 +90,8 @@ public class WeatherData {
     public double getUvIndex() { return uvIndex; }
     public boolean isDark() { return isDark; }
     public String getForecastWarning() { return forecastWarning; }
+    public String getSunrise() { return sunrise; }
+    public String getSunset() { return sunset; }
     public List<HourlyForecast> getHourlyForecast() { return hourlyForecast; }
+    public List<DailyForecast> getDailyForecast() { return dailyForecast; }
 }

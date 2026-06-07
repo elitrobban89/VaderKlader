@@ -15,7 +15,10 @@ public class WeatherOutfitResponse {
     private String precipitationDescription;
     private double uvIndex;
     private String forecastWarning;
+    private String sunrise;
+    private String sunset;
     private List<WeatherData.HourlyForecast> hourlyForecast;
+    private List<WeatherData.DailyForecast> dailyForecast;
     private String outfitSuggestion;
 
     public WeatherOutfitResponse(double lat, double lon, WeatherData weather, String outfitSuggestion) {
@@ -30,7 +33,10 @@ public class WeatherOutfitResponse {
         this.precipitationDescription = weather.getPrecipitationDescription();
         this.uvIndex = weather.getUvIndex();
         this.forecastWarning = weather.getForecastWarning();
+        this.sunrise = weather.getSunrise();
+        this.sunset = weather.getSunset();
         this.hourlyForecast = weather.getHourlyForecast();
+        this.dailyForecast = weather.getDailyForecast();
         this.outfitSuggestion = outfitSuggestion;
     }
 
@@ -45,6 +51,9 @@ public class WeatherOutfitResponse {
     public String getPrecipitationDescription() { return precipitationDescription; }
     public double getUvIndex() { return uvIndex; }
     public String getForecastWarning() { return forecastWarning; }
+    public String getSunrise() { return sunrise; }
+    public String getSunset() { return sunset; }
     public List<WeatherData.HourlyForecast> getHourlyForecast() { return hourlyForecast; }
+    public List<WeatherData.DailyForecast> getDailyForecast() { return dailyForecast; }
     public String getOutfitSuggestion() { return outfitSuggestion; }
 }
