@@ -9,6 +9,7 @@ public class WeatherOutfitResponse {
     private double windSpeed;
     private String windDirection;
     private double humidity;
+    private double precipitation;
     private String precipitationDescription;
     private double uvIndex;
     private String forecastWarning;
@@ -22,6 +23,7 @@ public class WeatherOutfitResponse {
         this.windSpeed = weather.getWindSpeed();
         this.windDirection = weather.getWindDirection();
         this.humidity = weather.getHumidity();
+        this.precipitation = weather.getPrecipitation();
         this.precipitationDescription = weather.getPrecipitationDescription();
         this.uvIndex = weather.getUvIndex();
         this.forecastWarning = weather.getForecastWarning();
@@ -35,6 +37,7 @@ public class WeatherOutfitResponse {
     public double getWindSpeed() { return windSpeed; }
     public String getWindDirection() { return windDirection; }
     public double getHumidity() { return humidity; }
+    public double getPrecipitation() { return precipitation; }
     public String getPrecipitationDescription() { return precipitationDescription; }
     public double getUvIndex() { return uvIndex; }
     public String getForecastWarning() { return forecastWarning; }

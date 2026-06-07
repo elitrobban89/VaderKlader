@@ -22,6 +22,7 @@ function vader_klader_shortcode() {
         var CACHE_KEY = 'vk_last_result';
         var CACHE_TTL = 30 * 60 * 1000;
         var countdownInterval = null;
+        var currentTransport = null;
 
         function el(suffix) { return document.getElementById(uid + '-' + suffix); }
 
@@ -52,7 +53,7 @@ function vader_klader_shortcode() {
                 }
                 var mins = Math.floor(left / 60);
                 var secs = left % 60;
-                el('error').textContent = 'For manga forfrAgningar. Forsok igen om ' +
+                el('error').textContent = 'Många förfrågningar. Försök igen om ' +
                     (mins > 0 ? mins + ' min ' : '') + secs + ' sek.';
             };
             tick();
@@ -77,7 +78,27 @@ function vader_klader_shortcode() {
             el('wind').textContent     = data.windSpeed.toFixed(1);
             el('winddir').textContent  = data.windDirection || '';
             el('humidity').textContent = Math.round(data.humidity);
-            el('precip').textContent   = data.precipitationDescription;
+
+            var precipText = data.precipitationDescription || '';
+            if (data.precipitation != null) {
+                if (data.precipitation > 0) {
+                    precipText += ' (' + data.precipitation.toFixed(1) + ' mm)';
+                }
+            }
+            el('precip').textContent = precipText;
+
+            el('feelslike-warn').style.display = 'none';
+            if (data.feelsLike != null) {
+                var delta = data.temperature - data.feelsLike;
+                if (delta > 4) {
+                    el('feelslike-warn').textContent = 'Känns ' + delta.toFixed(0) + '°C kallare pga vind — klä dig varmare än termometern!';
+                    el('feelslike-warn').style.display = 'block';
+                } else if (delta < -4) {
+                    el('feelslike-warn').textContent = 'Känns ' + Math.abs(delta).toFixed(0) + '°C varmare än termometern.';
+                    el('feelslike-warn').style.display = 'block';
+                }
+            }
+
             el('uv-row').style.display = 'none';
             if (data.uvIndex != null) {
                 if (data.uvIndex >= 3) {
@@ -112,7 +133,7 @@ function vader_klader_shortcode() {
 
         window[uid + '_start'] = function() {
             show('loading-gps');
-            if (!navigator.geolocation) { showError('Din webbläsare stodjer inte GPS.'); return; }
+            if (!navigator.geolocation) { showError('Din webbläsare stödjer inte GPS.'); return; }
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
                     lat = pos.coords.latitude;
@@ -123,7 +144,14 @@ function vader_klader_shortcode() {
             );
         };
 
+        window[uid + '_refresh'] = function() {
+            if (!currentTransport) return;
+            try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+            window[uid + '_select'](currentTransport);
+        };
+
         window[uid + '_select'] = function(transport) {
+            currentTransport = transport;
             show('loading-outfit');
 
             var controller = new AbortController();
@@ -159,9 +187,9 @@ function vader_klader_shortcode() {
                 .catch(function(err) {
                     clearTimeout(timeout);
                     if (err.name === 'AbortError') {
-                        showError('Servern svarade inte inom 30 sekunder. Forsok igen.');
+                        showError('Servern svarade inte inom 30 sekunder. Försök igen.');
                     } else {
-                        showError(err.message || 'Kunde inte na servern. Forsok igen senare.');
+                        showError(err.message || 'Kunde inte nå servern. Försök igen senare.');
                     }
                 });
         };
@@ -169,6 +197,7 @@ function vader_klader_shortcode() {
         window[uid + '_reset'] = function() {
             el('forecast-box').style.display = 'none';
             el('uv-row').style.display = 'none';
+            el('feelslike-warn').style.display = 'none';
             show('step-transport');
         };
 
@@ -188,7 +217,7 @@ function vader_klader_shortcode() {
                 input.disabled = false;
                 if (!results) { results = []; }
                 if (results.length === 0) {
-                    cityErr.textContent = 'Hittade ingen ort. Forsok igen.';
+                    cityErr.textContent = 'Hittade ingen ort. Försök igen.';
                     cityErr.style.display = 'block';
                     return;
                 }
@@ -198,7 +227,7 @@ function vader_klader_shortcode() {
             })
             .catch(function() {
                 input.disabled = false;
-                cityErr.textContent = 'Kunde inte soka efter ort. Kontrollera uppkopplingen.';
+                cityErr.textContent = 'Kunde inte söka efter ort. Kontrollera uppkopplingen.';
                 cityErr.style.display = 'block';
             });
         };
@@ -413,6 +442,7 @@ function vader_klader_shortcode() {
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span style="color:#90caf9; font-size:13px;">fr&aring;n <span id="<?php echo $uid; ?>-winddir"></span></span></p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbord:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
+                <div id="<?php echo $uid; ?>-feelslike-warn" style="display:none; margin-top:8px; padding:6px 10px; background:rgba(100,181,246,0.12); border-left:3px solid #64b5f6; border-radius:4px; color:#90caf9; font-size:13px;"></div>
                 <p id="<?php echo $uid; ?>-uv-row" style="margin:4px 0; display:none; color:#e3f2fd;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
                 <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
                     &#9888; <span id="<?php echo $uid; ?>-forecast-text"></span>
@@ -426,9 +456,14 @@ function vader_klader_shortcode() {
                 </a>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:6px;">
-                <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
-                    &#8635; V&auml;lj nytt f&auml;rdmedel
-                </button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
+                        &#8635; V&auml;lj nytt f&auml;rdmedel
+                    </button>
+                    <button onclick="window['<?php echo $uid; ?>_refresh']()" style="background:none; border:1px solid #64b5f6; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#64b5f6;">
+                        &#8593; Uppdatera v&auml;der
+                    </button>
+                </div>
                 <span id="<?php echo $uid; ?>-rate-info" style="display:none; font-size:11px; color:#aaa;"></span>
             </div>
         </div>
