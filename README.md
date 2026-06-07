@@ -23,6 +23,8 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Optimerad prompt** — ~80 tokens sparas per anrop genom kortare instruktioner, ger ~25% mer kapacitet per dag
 - **Cache-hantering** — max 500 entries, äldsta hälften rensas automatiskt när taket nås
 - **Groq-status i health** — `GET /api/health` returnerar `groq: quota_exceeded` och `retryIn` när dagsgränsen är nådd
+- **Mörker-detection** — sunrise/sunset från Open-Meteo, AI:n rekommenderar reflexer efter mörkrets inbrott
+- **Reset-fix** — prognos-varning och UV-rad döljs korrekt när användaren väljer nytt färdmedel
 
 ## Stack
 
