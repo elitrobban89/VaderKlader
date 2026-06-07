@@ -30,6 +30,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Årstidskontext** — aktuell månad skickas till AI:n för säsongsanpassade klädråd
 - **Cache-nyckel** — inkluderar vindrikting och mörker, dag/natt och nord/sydvind ger separata svar
 - **Quota-reset** — `quotaExceededUntil` nollställs vid lyckat Groq-anrop, health-endpointen stämmer efter omstart
+- **Browser-cache (localStorage)** — senaste resultatet visas direkt vid sidladdning inom 30 min, ingen väntan eller GPS-prompt
 
 ## Stack
 
