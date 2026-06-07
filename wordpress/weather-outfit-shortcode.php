@@ -31,6 +31,10 @@ function vader_klader_shortcode() {
         0%   { transform: translateX(0); }
         100% { transform: translateX(-50%); }
     }
+    @keyframes vk-groq-pulse {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.7; }
+    }
 
     .vk-header {
         display: flex;
@@ -75,8 +79,24 @@ function vader_klader_shortcode() {
     .vk-header-sub {
         font-size: 12px;
         color: #90caf9;
-        margin-top: 2px;
+        margin-top: 4px;
         letter-spacing: 0.5px;
+    }
+    .vk-groq-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: rgba(245,80,54,0.15);
+        border: 1px solid rgba(245,80,54,0.4);
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #ff7a5c !important;
+        letter-spacing: 0.4px;
+        text-decoration: none !important;
+        animation: vk-groq-pulse 3s ease-in-out infinite;
+        cursor: default;
     }
 
     @media (max-width: 420px) {
@@ -145,8 +165,8 @@ function vader_klader_shortcode() {
                 </div>
             </div>
             <div class="vk-header-text">
-                <span class="vk-header-title">Väderbaserade Klädförslag</span>
-                <span class="vk-header-sub">AI · Realtidsväder · Din plats</span>
+                <span class="vk-header-title">Väder &amp; Kläder</span>
+                <span class="vk-header-sub">Realtidsväder · Din plats · <span class="vk-groq-badge">⚡ Groq AI</span></span>
             </div>
         </div>
 
@@ -184,10 +204,13 @@ function vader_klader_shortcode() {
                 <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederbörd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
             </div>
             <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
-                <h3 style="margin:0 0 8px 0; color:#FFD54F;">👗 AI-klädförslag (<span id="<?php echo $uid; ?>-transport-label"></span>)</h3>
-                <p id="<?php echo $uid; ?>-outfit" style="margin:0; line-height:1.6; color:#fff8e1;"></p>
+                <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">👗 AI-klädförslag — <span id="<?php echo $uid; ?>-transport-label"></span></h3>
+                <p id="<?php echo $uid; ?>-outfit" style="margin:0 0 14px 0; line-height:1.6; color:#fff8e1;"></p>
+                <a href="https://groq.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(245,80,54,0.15);border:1px solid rgba(245,80,54,0.4);border-radius:20px;font-size:11px;font-weight:700;color:#ff7a5c;letter-spacing:0.4px;text-decoration:none;">
+                    ⚡ Drivs av Groq AI
+                </a>
             </div>
-            <button onclick="window['<?php echo $uid; ?>_reset']()" style="margin-top:14px; background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
+            <button onclick="window['<?php echo $uid; ?>_reset']()" style="margin-top:12px; background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
                 ↺ Välj nytt färdmedel
             </button>
         </div>

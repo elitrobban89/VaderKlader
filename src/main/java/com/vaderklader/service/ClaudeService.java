@@ -27,7 +27,12 @@ public class ClaudeService {
         try {
             ObjectNode body = objectMapper.createObjectNode();
             body.put("model", "llama-3.3-70b-versatile");
+            body.put("temperature", 0.4);
+            body.put("max_tokens", 200);
             ArrayNode messages = body.putArray("messages");
+            ObjectNode system = messages.addObject();
+            system.put("role", "system");
+            system.put("content", "Du är en praktisk klädrådgivare i Sverige. Svara alltid på svenska i 2-3 meningar. Var konkret och specifik om plagg och accessoarer.");
             ObjectNode message = messages.addObject();
             message.put("role", "user");
             message.put("content", prompt);
