@@ -73,6 +73,7 @@ public class ClaudeService {
 
             JsonNode responseJson = objectMapper.readTree(response.getBody());
             String suggestion = responseJson.get("choices").get(0).get("message").get("content").asText();
+            quotaExceededUntil = 0;
             evictIfNeeded();
             cache.put(cacheKey, new CacheEntry(suggestion, System.currentTimeMillis()));
             return suggestion;
@@ -104,7 +105,9 @@ public class ClaudeService {
         return Math.round(weather.getTemperature()) + "|" +
                Math.round(weather.getFeelsLike()) + "|" +
                Math.round(weather.getWindSpeed()) + "|" +
+               weather.getWindDirection() + "|" +
                weather.getPrecipitationDescription() + "|" +
+               weather.isDark() + "|" +
                transport.toLowerCase();
     }
 
@@ -142,7 +145,7 @@ public class ClaudeService {
 
     private String buildPrompt(WeatherData weather, String transport) {
         String transportContext = switch (transport.toLowerCase()) {
-            case "cykel" -> "Cykel: rörelsefrihet, vindskydd, svettreglering, reflexer vid dålig sikt.";
+            case "cykel" -> "Cykel: rörelsefrihet, vindskydd, svettreglering.";
             case "buss"  -> "Buss: väntan utomhus vid hållplats, varmt inomhus — lagerklädsel.";
             case "tåg"   -> "Tåg: gång till/från station, varmt inne — lagerklädsel.";
             case "bil"   -> "Bil: kort promenad i väder, varmt i bilen — lättavtagbart ytterplagg.";
