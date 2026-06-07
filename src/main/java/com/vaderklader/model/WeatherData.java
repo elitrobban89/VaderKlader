@@ -30,15 +30,20 @@ public class WeatherData {
 
     private String describePrecipitation(int category) {
         return switch (category) {
-            case 0 -> "Ingen nederbörd";
-            case 1 -> "Snö";
-            case 2 -> "Snö och regn";
-            case 3 -> "Regn";
-            case 4 -> "Duggregn";
-            case 5 -> "Underkylt regn";
-            case 6 -> "Underkylt duggregn";
-            case 7 -> "Åska";
-            case 8 -> "Åska med hagel";
+            case 0  -> "Ingen nederbörd";
+            case 1  -> "Snö";
+            case 2  -> "Snö och regn";
+            case 3  -> "Lätt regn";
+            case 4  -> "Duggregn";
+            case 5  -> "Underkylt regn";
+            case 6  -> "Underkylt duggregn";
+            case 7  -> "Åska";
+            case 8  -> "Åska med hagel";
+            case 9  -> "Dimma";
+            case 10 -> "Måttligt regn";
+            case 11 -> "Kraftigt regn";
+            case 12 -> "Lätt snö";
+            case 13 -> "Kraftig snö";
             default -> "Okänd";
         };
     }

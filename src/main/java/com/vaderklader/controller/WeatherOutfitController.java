@@ -23,7 +23,7 @@ public class WeatherOutfitController {
     private final ClaudeService claudeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, List<Long>> ipRequestLog = new ConcurrentHashMap<>();
-    private static final int MAX_REQUESTS_PER_HOUR = 10;
+    private static final int MAX_REQUESTS_PER_HOUR = 20;
 
     public WeatherOutfitController(OpenMeteoService openMeteoService, ClaudeService claudeService) {
         this.openMeteoService = openMeteoService;
@@ -48,19 +48,30 @@ public class WeatherOutfitController {
             @RequestParam double lon,
             @RequestParam(required = false, defaultValue = "okänt") String transport,
             HttpServletRequest request) {
+
         if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
             return ResponseEntity.badRequest().body(Map.of("error", "Ogiltiga koordinater."));
         }
+
         String ip = getClientIp(request);
-        if (isRateLimited(ip)) {
-            return ResponseEntity.status(429).body(Map.of(
-                    "error", "För många förfrågningar från din IP. Försök igen om en stund."
-            ));
+        int remaining = addAndGetRemaining(ip);
+        if (remaining < 0) {
+            long retryAfterSeconds = getRetryAfterSeconds(ip);
+            return ResponseEntity.status(429)
+                    .header("Retry-After", String.valueOf(retryAfterSeconds))
+                    .body(Map.of(
+                            "error", "För många förfrågningar från din IP. Försök igen om en stund.",
+                            "retryAfterSeconds", retryAfterSeconds
+                    ));
         }
+
         try {
             WeatherData weather = openMeteoService.getWeather(lat, lon);
             String suggestion = claudeService.getOutfitSuggestion(weather, transport);
-            return ResponseEntity.ok(new WeatherOutfitResponse(lat, lon, weather, suggestion));
+            return ResponseEntity.ok()
+                    .header("X-RateLimit-Remaining", String.valueOf(remaining))
+                    .header("X-RateLimit-Limit", String.valueOf(MAX_REQUESTS_PER_HOUR))
+                    .body(new WeatherOutfitResponse(lat, lon, weather, suggestion));
         } catch (Exception e) {
             ObjectNode err = objectMapper.createObjectNode();
             err.put("error", e.getMessage());
@@ -76,7 +87,7 @@ public class WeatherOutfitController {
         return request.getRemoteAddr();
     }
 
-    private boolean isRateLimited(String ip) {
+    private int addAndGetRemaining(String ip) {
         long now = System.currentTimeMillis();
         long windowStart = now - 3_600_000;
         ipRequestLog.compute(ip, (k, times) -> {
@@ -85,6 +96,13 @@ public class WeatherOutfitController {
             updated.add(now);
             return updated;
         });
-        return ipRequestLog.get(ip).size() > MAX_REQUESTS_PER_HOUR;
+        return MAX_REQUESTS_PER_HOUR - ipRequestLog.get(ip).size();
+    }
+
+    private long getRetryAfterSeconds(String ip) {
+        List<Long> times = ipRequestLog.get(ip);
+        if (times == null || times.isEmpty()) return 60L;
+        long retryAfterMs = (times.get(0) + 3_600_000) - System.currentTimeMillis();
+        return Math.max(1L, (long) Math.ceil(retryAfterMs / 1000.0));
     }
 }

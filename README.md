@@ -13,7 +13,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 
 - **Upplevd temperatur** — Open-Meteo `apparent_temperature` visas i väderkortet och skickas till AI:n för mer relevanta klädråd
 - **Prognos** — timprognos för de nästa 6 timmarna. Om regn, snö, åska eller hagel väntas visas en gul varning i väderkortet och AI:n nämner det med ungefärlig tid. Åska och hagel ger specifika råd (söka skydd, cyklister bör stanna)
-- **IP-begränsning** — max 10 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
+- **IP-begränsning** — max 20 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
 - **Caching** — identisk väder + färdmedel-kombination cachas i 30 minuter, sparar tokens och ger snabbare svar
 - **Groq-kvalitet** — system-prompt sätter persona, `temperature: 0.4` för konsistenta svar, `max_tokens: 200` håller svaren koncisa
 - **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten
@@ -31,6 +31,14 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Cache-nyckel** — inkluderar vindrikting och mörker, dag/natt och nord/sydvind ger separata svar
 - **Quota-reset** — `quotaExceededUntil` nollställs vid lyckat Groq-anrop, health-endpointen stämmer efter omstart
 - **Browser-cache (localStorage)** — senaste resultatet visas direkt vid sidladdning inom 30 min, ingen väntan eller GPS-prompt
+- **Anrop-räknare** — visar återstående anrop (t.ex. "18/20 anrop kvar"), varning i orange/rött när ≤ 6/3 kvar
+- **Rate limit-nedräkning** — vid IP-gränsen visas en live-countdown ("Försök igen om 4 min 32 sek") som automatiskt visar startknappen när det är fritt
+- **Stadssökning** — om GPS nekas kan användaren söka på stad (via Nominatim/OpenStreetMap) för att ändå få klädförslag
+- **Regnintensietet** — skillnad mellan Lätt regn, Måttligt regn och Kraftigt regn (Open-Meteo koder 61/63/65/80/81/82)
+- **Snöintensietet** — Lätt snö vs Kraftig snö (koder 71/73/75)
+- **Dimma** — weather code 45/48 ger "Dimma" i väderkortet och AI:n ger råd om synlighet
+- **Rate limit-headers** — `X-RateLimit-Remaining` och `X-RateLimit-Limit` i varje svar, exponerade via CORS
+- **Retry-After** — 429-svar inkluderar `retryAfterSeconds` och `Retry-After`-header med exakt väntetid
 
 ## Stack
 

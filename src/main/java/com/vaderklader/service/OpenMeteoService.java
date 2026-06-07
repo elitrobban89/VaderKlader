@@ -116,14 +116,19 @@ public class OpenMeteoService {
     }
 
     private int weatherCodeToPrecipCategory(int code) {
-        if (code == 0 || code <= 3)   return 0; // Klart/molnigt
-        if (code == 96 || code == 99) return 8; // Åska med hagel
-        if (code == 95)               return 7; // Åska
-        if (code == 71 || code == 73 || code == 75 || code == 77 || code == 85 || code == 86) return 1; // Snö
+        if (code == 0 || code <= 3)              return 0;  // Klart/molnigt
+        if (code == 45 || code == 48)            return 9;  // Dimma
         if (code == 51 || code == 53 || code == 55) return 4; // Duggregn
-        if (code == 56 || code == 57) return 6; // Underkylt duggregn
-        if (code == 66 || code == 67) return 5; // Underkylt regn
-        if (code >= 61)               return 3; // Regn / åska
+        if (code == 56 || code == 57)            return 6;  // Underkylt duggregn
+        if (code == 61 || code == 80)            return 3;  // Lätt regn
+        if (code == 63 || code == 81)            return 10; // Måttligt regn
+        if (code == 65 || code == 82)            return 11; // Kraftigt regn
+        if (code == 66 || code == 67)            return 5;  // Underkylt regn
+        if (code == 71 || code == 85)            return 12; // Lätt snö
+        if (code == 73 || code == 77)            return 1;  // Snö
+        if (code == 75 || code == 86)            return 13; // Kraftig snö
+        if (code == 95)                          return 7;  // Åska
+        if (code == 96 || code == 99)            return 8;  // Åska med hagel
         return 0;
     }
 }

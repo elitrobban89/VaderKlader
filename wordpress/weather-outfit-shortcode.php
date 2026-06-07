@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.1
+ * Version: 2.2
  * Author: elitrobban.se
  */
 
@@ -214,15 +214,32 @@ function vader_klader_shortcode() {
                     ⚡ Drivs av Groq AI
                 </a>
             </div>
-            <button onclick="window['<?php echo $uid; ?>_reset']()" style="margin-top:12px; background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
-                ↺ Välj nytt färdmedel
-            </button>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:6px;">
+                <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">
+                    ↺ Välj nytt färdmedel
+                </button>
+                <span id="<?php echo $uid; ?>-rate-info" style="display:none; font-size:11px; color:#aaa;"></span>
+            </div>
         </div>
 
         <div id="<?php echo $uid; ?>-no-gps" style="display:none;">
-            <p>Kunde inte få din position. Kontrollera att du har tillåtit platsåtkomst i webbläsaren.</p>
-            <button onclick="window['<?php echo $uid; ?>_start']()" style="background:#2196F3; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">
-                Försök igen
+            <p style="font-size:14px; margin-bottom:14px; color:#ccc;">📍 Kunde inte hämta din position via GPS.</p>
+            <div style="margin-bottom:16px;">
+                <p style="font-size:14px; margin-bottom:8px; color:#ccc;"><strong>Sök efter din stad:</strong></p>
+                <div style="display:flex; gap:8px;">
+                    <input id="<?php echo $uid; ?>-city-input" type="text" placeholder="t.ex. Stockholm"
+                        style="flex:1; padding:10px 14px; border-radius:6px; border:1px solid #555; background:#1a2030; color:#fff; font-size:14px; outline:none;"
+                        onkeydown="if(event.key==='Enter') window['<?php echo $uid; ?>_citySearch']()" />
+                    <button onclick="window['<?php echo $uid; ?>_citySearch']()"
+                        style="background:#2196F3; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;">
+                        Sök
+                    </button>
+                </div>
+                <p id="<?php echo $uid; ?>-city-error" style="display:none; color:#ef5350; font-size:13px; margin-top:6px;"></p>
+            </div>
+            <button onclick="window['<?php echo $uid; ?>_start']()"
+                style="background:none; border:1px solid #666; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#aaa;">
+                📡 Försök med GPS igen
             </button>
         </div>
 
@@ -236,6 +253,7 @@ function vader_klader_shortcode() {
         var labelMap = { 'buss': 'Buss 🚌', 'tåg': 'Tåg 🚆', 'cykel': 'Cykel 🚲', 'bil': 'Bil 🚗', 'gång': 'Gång 🚶' };
         var CACHE_KEY = 'vk_last_result';
         var CACHE_TTL = 30 * 60 * 1000;
+        var countdownInterval = null;
 
         function el(suffix) { return document.getElementById(uid + '-' + suffix); }
 
@@ -246,9 +264,42 @@ function vader_klader_shortcode() {
         }
 
         function showError(msg) {
+            clearInterval(countdownInterval);
             el('error').textContent = msg;
             show('error');
-            setTimeout(function() { el('step-start').style.display = 'block'; }, 100);
+            el('step-start').style.display = 'block';
+        }
+
+        function showCountdown(seconds) {
+            clearInterval(countdownInterval);
+            var end = Date.now() + seconds * 1000;
+            show('error');
+            function tick() {
+                var left = Math.ceil((end - Date.now()) / 1000);
+                if (left <= 0) {
+                    clearInterval(countdownInterval);
+                    el('error').style.display = 'none';
+                    show('step-start');
+                    return;
+                }
+                var mins = Math.floor(left / 60);
+                var secs = left % 60;
+                el('error').textContent = '⏳ IP-gränsen nådd. Försök igen om ' +
+                    (mins > 0 ? mins + ' min ' : '') + secs + ' sek.';
+            }
+            tick();
+            countdownInterval = setInterval(tick, 1000);
+        }
+
+        function updateRateIndicator(remaining, limit) {
+            limit = isNaN(limit) ? 20 : limit;
+            try { localStorage.setItem('vk_rate_remaining', remaining); localStorage.setItem('vk_rate_limit', limit); } catch(e) {}
+            var elem = el('rate-info');
+            if (!elem) return;
+            elem.style.display = 'inline';
+            var color = remaining <= 3 ? '#ff7043' : remaining <= 6 ? '#FFC107' : '#888';
+            elem.style.color = color;
+            elem.textContent = remaining + '/' + limit + ' anrop kvar' + (remaining <= 3 ? ' ⚠️' : '');
         }
 
         function displayResult(data, transport) {
@@ -309,14 +360,22 @@ function vader_klader_shortcode() {
             fetch('<?php echo VADER_KLADER_API_URL; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport), { signal: controller.signal })
                 .then(function(r) {
                     clearTimeout(timeout);
+                    var remaining = parseInt(r.headers.get('X-RateLimit-Remaining'));
+                    var limit     = parseInt(r.headers.get('X-RateLimit-Limit'));
                     return r.json().then(function(data) {
+                        if (r.status === 429 && data.retryAfterSeconds) {
+                            showCountdown(data.retryAfterSeconds);
+                            return null;
+                        }
                         if (!r.ok || data.error) {
                             throw new Error(data.error || ('HTTP ' + r.status));
                         }
+                        if (!isNaN(remaining)) updateRateIndicator(remaining, limit);
                         return data;
                     });
                 })
                 .then(function(data) {
+                    if (!data) return;
                     saveCache(transport, data);
                     displayResult(data, transport);
                 })
@@ -336,12 +395,47 @@ function vader_klader_shortcode() {
             show('step-transport');
         };
 
+        window[uid + '_citySearch'] = function() {
+            var input = el('city-input');
+            var query = input ? input.value.trim() : '';
+            if (!query) return;
+            var cityErr = el('city-error');
+            cityErr.style.display = 'none';
+            input.disabled = true;
+
+            fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1', {
+                headers: { 'Accept-Language': 'sv' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(results) {
+                input.disabled = false;
+                if (!results || results.length === 0) {
+                    cityErr.textContent = 'Hittade ingen ort med det namnet. Försök igen.';
+                    cityErr.style.display = 'block';
+                    return;
+                }
+                lat = parseFloat(results[0].lat);
+                lon = parseFloat(results[0].lon);
+                show('step-transport');
+            })
+            .catch(function() {
+                input.disabled = false;
+                cityErr.textContent = 'Kunde inte söka efter ort. Kontrollera din uppkoppling.';
+                cityErr.style.display = 'block';
+            });
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             var cached = loadCache();
             if (cached) {
                 lat = cached.data.lat;
                 lon = cached.data.lon;
                 displayResult(cached.data, cached.transport);
+                try {
+                    var r = localStorage.getItem('vk_rate_remaining');
+                    var l = localStorage.getItem('vk_rate_limit');
+                    if (r !== null) updateRateIndicator(parseInt(r), parseInt(l) || 20);
+                } catch(e) {}
             } else if (new URLSearchParams(window.location.search).get('autostart') === '1') {
                 window[uid + '_start']();
             }
