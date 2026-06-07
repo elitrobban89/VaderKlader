@@ -40,6 +40,9 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Rate limit-headers** — `X-RateLimit-Remaining` och `X-RateLimit-Limit` i varje svar, exponerade via CORS
 - **Retry-After** — 429-svar inkluderar `retryAfterSeconds` och `Retry-After`-header med exakt väntetid
 - **WordPress content-filter fix** — JavaScript-blocket ligger i `wp_footer`-action (priority 99) för att undvika att WordPress `the_content`-filter konverterar `&&` till `&#038;&#038;` och bryter koden
+- **Refresh-knapp** — uppdaterar väder och klädförslag med ett klick utan att byta färdmedel, rensar localStorage-cachen
+- **Feels like-varning** — blå varningsrad visas när upplevd temperatur avviker mer än 4°C från faktisk (t.ex. "Känns 6°C kallare pga vind")
+- **Nederbördsmängd** — visar mm bredvid beskrivningen när det regnar/snöar, t.ex. "Lätt regn (0.4 mm)"
 
 ## Stack
 
