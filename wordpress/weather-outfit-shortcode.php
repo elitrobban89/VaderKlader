@@ -258,6 +258,29 @@ function vader_klader_shortcode() {
                 });
         };
 
+        window[uid + '_share'] = function() {
+            var temp     = el('temp').textContent;
+            var feels    = el('feels').textContent;
+            var wind     = el('wind').textContent;
+            var winddir  = el('winddir').textContent;
+            var outfit   = el('outfit').textContent;
+            var transport = el('transport-label').textContent;
+            var text = 'Väder just nu: ' + temp + '°C (upplevd ' + feels + '°C), ' +
+                       'Vind ' + wind + ' m/s från ' + winddir + '\n\n' +
+                       'Klädförslag för ' + transport + ':\n' + outfit + '\n\n' +
+                       'elitrobban.se';
+            if (navigator.share) {
+                navigator.share({ text: text }).catch(function() {});
+            } else {
+                navigator.clipboard.writeText(text).then(function() {
+                    var btn = el('share-btn');
+                    var orig = btn.innerHTML;
+                    btn.textContent = 'Kopierat!';
+                    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+                }).catch(function() {});
+            }
+        };
+
         window[uid + '_reset'] = function() {
             el('forecast-box').style.display = 'none';
             el('uv-row').style.display = 'none';
@@ -561,6 +584,9 @@ function vader_klader_shortcode() {
                     </button>
                     <button onclick="window['<?php echo $uid; ?>_refresh']()" style="background:none; border:1px solid #64b5f6; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#64b5f6;">
                         &#8593; Uppdatera v&auml;der
+                    </button>
+                    <button id="<?php echo $uid; ?>-share-btn" onclick="window['<?php echo $uid; ?>_share']()" style="background:none; border:1px solid #81c784; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#81c784;">
+                        &#128279; Dela
                     </button>
                 </div>
                 <span id="<?php echo $uid; ?>-rate-info" style="display:none; font-size:11px; color:#aaa;"></span>
