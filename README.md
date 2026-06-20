@@ -50,6 +50,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Laddningsspinners** — CSS-spinner visas under GPS-hämtning och klädförslagsgenerering
 - **Naturlig prognos i AI-svar** — kommande regn/snö nämns i klädråden utan att duplicera varningsrutan
 - **GPS-position sparas** — lat/lon cachas i localStorage i 6 timmar, återbesök inom 6h hoppar direkt till transport-valet utan ny GPS-prompt
+- **Dela-knapp** — 🔗-knapp delar aktuellt klädförslag via Web Share API på mobil (systemets inbyggda delningsblad); på desktop kopieras texten till urklipp med bekräftelsefeedback
 
 ## Stack
 
