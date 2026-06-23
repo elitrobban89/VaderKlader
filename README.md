@@ -46,7 +46,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Feels like-varning** — blå varningsrad visas när upplevd temperatur avviker mer än 4°C från faktisk (t.ex. "Känns 6°C kallare pga vind")
 - **Nederbördsmängd** — visar mm bredvid beskrivningen när det regnar/snöar, t.ex. "Lätt regn (0.4 mm)"
 - **6-timmarsprognos** — horisontell remsa visar "Om Xh", ikon, temperatur, regnchans (%) och vindstyrka (m/s) för nästa 6 timmar
-- **Veckoprognos** — 5-dagarsöversikt med dagsnamn (Idag/Imorgon/Mån/Tis…), väderikon, max- och min-temperatur
+- **Veckoprognos med klädförslag** — 5-dagarsöversikt med dagsnamn (Idag/Imorgon/Mån/Tis…), väderikon, max- och min-temperatur, samt ett kort regelbaserat klädtips per dag baserat på maxtemperatur och vädertyp (t.ex. "Tröja + jacka", "T-shirt + regnjacka", "Vinterjacka + stövlar") — genereras på backend utan extra AI-anrop
 - **Soluppgång/solnedgång** — visas i väderkortet med klockslag från Open-Meteo daily
 - **Transport-emojis** — färdmedelsetiketter inkluderar emoji: Buss 🚌, Tåg 🚆, Cykel 🚲, Bil 🚗, Gång 🚶
 - **Laddningsspinners** — CSS-spinner visas under GPS-hämtning och klädförslagsgenerering
