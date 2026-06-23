@@ -136,13 +136,34 @@ public class OpenMeteoService {
             for (int i = 0; i < days; i++) {
                 String dateStr = dates.get(i).asText();
                 String dayName = i == 0 ? "Idag" : i == 1 ? "Imorgon" : toDayNameSv(dateStr);
-                String icon = weatherCodeToIcon(codes.get(i).asInt());
+                int code = codes.get(i).asInt();
+                String icon = weatherCodeToIcon(code);
                 double max = Math.round(maxTemps.get(i).asDouble() * 10.0) / 10.0;
                 double min = Math.round(minTemps.get(i).asDouble() * 10.0) / 10.0;
-                result.add(new WeatherData.DailyForecast(dayName, icon, max, min));
+                String outfit = dailyOutfit(max, code);
+                result.add(new WeatherData.DailyForecast(dayName, icon, max, min, outfit));
             }
         } catch (Exception ignored) {}
         return result;
+    }
+
+    private String dailyOutfit(double tempMax, int weatherCode) {
+        boolean rain = (weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)
+                       || weatherCode == 95 || weatherCode == 96 || weatherCode == 99;
+        boolean snow = (weatherCode >= 71 && weatherCode <= 77) || weatherCode == 85 || weatherCode == 86;
+        if (snow) return tempMax >= 5 ? "Jacka + stövlar" : "Vinterjacka + stövlar";
+        if (rain) {
+            if (tempMax >= 20) return "T-shirt + regnjacka";
+            if (tempMax >= 10) return "Jacka + regnjacka";
+            return "Vinterjacka + regn";
+        }
+        if (tempMax >= 25) return "T-shirt + shorts";
+        if (tempMax >= 20) return "T-shirt";
+        if (tempMax >= 15) return "Tunn tröja";
+        if (tempMax >= 10) return "Tröja + jacka";
+        if (tempMax >= 5)  return "Tjock jacka";
+        if (tempMax >= 0)  return "Vinterjacka";
+        return "Vinterjacka + lager";
     }
 
     private String toDayNameSv(String dateStr) {

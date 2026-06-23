@@ -156,6 +156,7 @@ function vader_klader_shortcode() {
                              '<span style="font-size:20px;line-height:1;">' + d.icon + '</span>' +
                              '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(d.tempMax) + '&deg;</span>' +
                              '<span style="font-size:11px;color:#90caf9;">' + Math.round(d.tempMin) + '&deg;</span>' +
+                             (d.outfit ? '<span style="font-size:9px;color:#b0bec5;text-align:center;line-height:1.3;margin-top:2px;word-break:break-word;">' + d.outfit + '</span>' : '') +
                              '</div>';
                 });
                 el('daily-strip').innerHTML = dhtml;
