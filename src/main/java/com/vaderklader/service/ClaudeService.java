@@ -49,6 +49,10 @@ public class ClaudeService {
             return entry.suggestion();
         }
 
+        if (isQuotaExceeded()) {
+            return buildFallbackSuggestion(weather, transport);
+        }
+
         String prompt = buildPrompt(weather, transport);
 
         try {
@@ -82,12 +86,48 @@ public class ClaudeService {
             if (e.getStatusCode().value() == 429) {
                 String body = e.getResponseBodyAsString();
                 quotaExceededUntil = System.currentTimeMillis() + parseRetryMs(body);
-                throw new RuntimeException("Dagsgränsen för AI-anrop är nådd. Försök igen om " + parseRetryTime(body) + ".");
+                String fallback = buildFallbackSuggestion(weather, transport);
+                cache.put(cacheKey, new CacheEntry(fallback, System.currentTimeMillis()));
+                return fallback;
             }
-            throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
+            return buildFallbackSuggestion(weather, transport);
         } catch (Exception e) {
-            throw new RuntimeException("Kunde inte hämta klädförslag: " + e.getMessage());
+            return buildFallbackSuggestion(weather, transport);
         }
+    }
+
+    private String buildFallbackSuggestion(WeatherData weather, String transport) {
+        double t = weather.getFeelsLike();
+        String precip = weather.getPrecipitationDescription();
+        double wind = weather.getWindSpeed();
+        boolean dark = weather.isDark();
+        boolean isRain = precip.contains("regn");
+        boolean isSnow = precip.contains("snö") || precip.contains("Snö");
+        boolean isThunder = precip.contains("ska");
+
+        StringBuilder sb = new StringBuilder();
+        if (t < -10) sb.append("Extremt kallt — termounderställ, tjock fleece, varm vinterjacka, mössa och vantar är ett måste.");
+        else if (t < 0) sb.append("Kall dag — klä dig i lager med termounderställ och tjock vinterjacka, mössa och vantar.");
+        else if (t < 5) sb.append("Kyligt ute — fleece eller tjock tröja under en varm jacka, mössa och handskar rekommenderas.");
+        else if (t < 10) sb.append("Svalare väder — ta på dig en mellantjock jacka och tänk på lagerklädsel.");
+        else if (t < 15) sb.append("Lite kylig luft — en lättare jacka räcker, men ha ett extra lager redo.");
+        else if (t < 20) sb.append("Behagligt väder — en tunn jacka eller hoodie räcker bra.");
+        else if (t < 26) sb.append("Varmt och skönt — tunna kläder som t-shirt och lätta byxor fungerar fint.");
+        else sb.append("Riktigt varmt ute — kortärmat och shorts passar, drick gärna extra vatten.");
+
+        if (isThunder) sb.append(" Åska väntas — ta med vattentät jacka och undvik att vara ute i onödan.");
+        else if (isRain) sb.append(" Det regnar — ta med regnjacka eller paraply.");
+        else if (isSnow) sb.append(" Snöfall — vattentäta skor och halkfria sulor är viktigt.");
+
+        if (wind > 10) sb.append(" Kraftig vind — välj ett tätt vindskyddande ytterplagg.");
+        else if (wind > 6 && t < 15) sb.append(" Det blåser en del — ett vindskydd gör skillnad.");
+
+        if (dark) sb.append(" Det är mörkt ute — reflexer rekommenderas.");
+
+        if ("cykel".equalsIgnoreCase(transport) && t < 10) sb.append(" Med cykel: handskar och cykelmössa under hjälmen.");
+        else if ("cykel".equalsIgnoreCase(transport) && isRain) sb.append(" Med cykel: vattentäta leggings och regnponcho hjälper.");
+
+        return sb.toString();
     }
 
     private void evictIfNeeded() {

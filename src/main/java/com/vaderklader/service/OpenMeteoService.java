@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class OpenMeteoService {
@@ -21,6 +23,11 @@ public class OpenMeteoService {
         "&hourly=weather_code,temperature_2m,precipitation_probability,wind_speed_10m" +
         "&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code" +
         "&forecast_days=7&timezone=auto";
+
+    private static final long CACHE_TTL_MS = 90 * 60 * 1000L; // 90 min — covers transient rate-limit periods
+
+    private record CacheEntry(WeatherData data, long timestamp) {}
+    private final Map<String, CacheEntry> weatherCache = new ConcurrentHashMap<>();
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -33,14 +40,22 @@ public class OpenMeteoService {
     }
 
     public WeatherData getWeather(double lat, double lon) {
+        // Round to ~1 km grid for cache key
+        String key = Math.round(lat * 100) + "," + Math.round(lon * 100);
         String url = String.format(OPEN_METEO_URL,
             String.valueOf(lat).replace(",", "."),
             String.valueOf(lon).replace(",", "."));
 
         try {
             String json = restTemplate.getForObject(url, String.class);
-            return parseResponse(json);
+            WeatherData data = parseResponse(json);
+            weatherCache.put(key, new CacheEntry(data, System.currentTimeMillis()));
+            return data;
         } catch (Exception e) {
+            CacheEntry cached = weatherCache.get(key);
+            if (cached != null && System.currentTimeMillis() - cached.timestamp() < CACHE_TTL_MS) {
+                return cached.data();
+            }
             throw new RuntimeException("Kunde inte hämta väderdata: " + e.getMessage());
         }
     }
