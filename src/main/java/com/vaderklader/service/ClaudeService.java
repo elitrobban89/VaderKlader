@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 public class ClaudeService {
 
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+    private static final String MODEL_PRIMARY = "llama-3.3-70b-versatile";
+    private static final String MODEL_FALLBACK = "llama-3.1-8b-instant";
     private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
     private static final int MAX_CACHE_SIZE = 500;
 
@@ -56,27 +58,7 @@ public class ClaudeService {
         String prompt = buildPrompt(weather, transport);
 
         try {
-            ObjectNode body = objectMapper.createObjectNode();
-            body.put("model", "llama-3.3-70b-versatile");
-            body.put("temperature", 0.4);
-            body.put("max_tokens", 200);
-            ArrayNode messages = body.putArray("messages");
-            ObjectNode system = messages.addObject();
-            system.put("role", "system");
-            system.put("content", "Du är en praktisk klädrådgivare i Sverige. Svara alltid på svenska i 2-3 meningar. Var konkret och specifik om plagg och accessoarer.");
-            ObjectNode message = messages.addObject();
-            message.put("role", "user");
-            message.put("content", prompt);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + apiKey);
-
-            HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(GROQ_URL, request, String.class);
-
-            JsonNode responseJson = objectMapper.readTree(response.getBody());
-            String suggestion = responseJson.get("choices").get(0).get("message").get("content").asText();
+            String suggestion = callGroq(MODEL_PRIMARY, prompt);
             quotaExceededUntil = 0;
             evictIfNeeded();
             cache.put(cacheKey, new CacheEntry(suggestion, System.currentTimeMillis()));
@@ -84,16 +66,43 @@ public class ClaudeService {
 
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode().value() == 429) {
-                String body = e.getResponseBodyAsString();
-                quotaExceededUntil = System.currentTimeMillis() + parseRetryMs(body);
-                String fallback = buildFallbackSuggestion(weather, transport);
-                cache.put(cacheKey, new CacheEntry(fallback, System.currentTimeMillis()));
-                return fallback;
+                quotaExceededUntil = System.currentTimeMillis() + parseRetryMs(e.getResponseBodyAsString());
+                try {
+                    String suggestion = callGroq(MODEL_FALLBACK, prompt);
+                    evictIfNeeded();
+                    cache.put(cacheKey, new CacheEntry(suggestion, System.currentTimeMillis()));
+                    return suggestion;
+                } catch (Exception ignored) {}
             }
-            return buildFallbackSuggestion(weather, transport);
+            String fallback = buildFallbackSuggestion(weather, transport);
+            cache.put(cacheKey, new CacheEntry(fallback, System.currentTimeMillis()));
+            return fallback;
         } catch (Exception e) {
             return buildFallbackSuggestion(weather, transport);
         }
+    }
+
+    private String callGroq(String model, String prompt) throws Exception {
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("model", model);
+        body.put("temperature", 0.4);
+        body.put("max_tokens", 200);
+        ArrayNode messages = body.putArray("messages");
+        ObjectNode system = messages.addObject();
+        system.put("role", "system");
+        system.put("content", "Du är en praktisk klädrådgivare i Sverige. Svara alltid på svenska i 2-3 meningar. Var konkret och specifik om plagg och accessoarer.");
+        ObjectNode message = messages.addObject();
+        message.put("role", "user");
+        message.put("content", prompt);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + apiKey);
+
+        HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(GROQ_URL, request, String.class);
+        JsonNode responseJson = objectMapper.readTree(response.getBody());
+        return responseJson.get("choices").get(0).get("message").get("content").asText();
     }
 
     private String buildFallbackSuggestion(WeatherData weather, String transport) {

@@ -16,6 +16,8 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **IP-begränsning** — max 20 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
 - **Caching** — identisk väder + färdmedel-kombination cachas i 30 minuter, sparar tokens och ger snabbare svar
 - **Groq-kvalitet** — system-prompt sätter persona, `temperature: 0.4` för konsistenta svar, `max_tokens: 200` håller svaren koncisa
+- **Väder-fallback-cache** — Open-Meteo-data cachas per position (~1 km-grid); vid API-fel (429 eller nätverksfel) returneras senaste cachat värde oavsett ålder — inga tomma sidor vid tillfälliga driftstörningar
+- **Regelbaserat + instant-model fallback** — om Groq 70b-kvoten är slut provas `llama-3.1-8b-instant` automatiskt; om det också misslyckas genereras ett regelbaserat klädförslag baserat på upplevd temperatur, nederbörd, vindstyrka och mörkertillstånd (8 temperaturintervall, stöd för cykel, regn, snö, åska, reflexer) — alltid ett svar till användaren
 - **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten
 - **Färdmedel** — alla fem alternativ (Buss, Tåg, Cykel, Bil, Gång) har specifik kontext för AI:n
 - **UV-index** — visas i väderkortet och skickas till AI:n vid UV ≥ 3, ger råd om solskydd och solhatt

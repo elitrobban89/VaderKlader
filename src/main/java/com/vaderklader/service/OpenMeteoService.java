@@ -53,9 +53,7 @@ public class OpenMeteoService {
             return data;
         } catch (Exception e) {
             CacheEntry cached = weatherCache.get(key);
-            if (cached != null && System.currentTimeMillis() - cached.timestamp() < CACHE_TTL_MS) {
-                return cached.data();
-            }
+            if (cached != null) return cached.data(); // use any cached data, even stale, on error
             throw new RuntimeException("Kunde inte hämta väderdata: " + e.getMessage());
         }
     }
