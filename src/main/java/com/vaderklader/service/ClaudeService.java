@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 public class ClaudeService {
 
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-    private static final String MODEL_PRIMARY = "llama-3.3-70b-versatile";
-    private static final String MODEL_FALLBACK = "llama-3.1-8b-instant";
+    private static final String MODEL_PRIMARY = "openai/gpt-oss-120b";
+    private static final String MODEL_FALLBACK = "qwen/qwen3.6-27b";
     private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
     private static final int MAX_CACHE_SIZE = 500;
 
