@@ -46,6 +46,10 @@ public class OpenMeteoService {
             String.valueOf(lat).replace(",", "."),
             String.valueOf(lon).replace(",", "."));
 
+        CacheEntry existing = weatherCache.get(key);
+        if (existing != null && System.currentTimeMillis() - existing.timestamp() < CACHE_TTL_MS)
+            return existing.data();
+
         try {
             String json = restTemplate.getForObject(url, String.class);
             WeatherData data = parseResponse(json);
