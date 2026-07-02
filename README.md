@@ -15,7 +15,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Prognos** — timprognos för de nästa 6 timmarna. Om regn, snö, åska eller hagel väntas visas en gul varning i väderkortet och AI:n nämner det med ungefärlig tid. Åska och hagel ger specifika råd (söka skydd, cyklister bör stanna)
 - **IP-begränsning** — max 20 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
 - **Caching** — identisk väder + färdmedel-kombination cachas i 30 minuter, sparar tokens och ger snabbare svar
-- **Groq-kvalitet** — system-prompt sätter persona, `temperature: 0.4` för konsistenta svar, `max_tokens: 200` håller svaren koncisa
+- **Groq-kvalitet** — system-prompt sätter persona, `temperature: 0.4` för konsistenta svar, `max_tokens: 400` håller svaren koncisa (`reasoning_effort: low` så gpt-oss inte bränner budgeten på reasoning)
 - **Väder-fallback-cache** — Open-Meteo-data cachas per position (~1 km-grid); vid API-fel (429 eller nätverksfel) returneras senaste cachat värde oavsett ålder — inga tomma sidor vid tillfälliga driftstörningar
 - **Regelbaserat + fallback-modell** — om `openai/gpt-oss-120b`-kvoten är slut provas `qwen/qwen3.6-27b` automatiskt; om det också misslyckas genereras ett regelbaserat klädförslag baserat på upplevd temperatur, nederbörd, vindstyrka och mörkertillstånd (8 temperaturintervall, stöd för cykel, regn, snö, åska, reflexer) — alltid ett svar till användaren
 - **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten

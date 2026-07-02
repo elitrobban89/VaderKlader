@@ -86,7 +86,9 @@ public class ClaudeService {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("model", model);
         body.put("temperature", 0.4);
-        body.put("max_tokens", 200);
+        body.put("max_tokens", 400);
+        // gpt-oss är en reasoning-modell — utan low-effort kan reasoning äta hela tokenbudgeten
+        if (model.startsWith("openai/")) body.put("reasoning_effort", "low");
         ArrayNode messages = body.putArray("messages");
         ObjectNode system = messages.addObject();
         system.put("role", "system");
