@@ -22,7 +22,7 @@ public class OpenMeteoService {
         "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,precipitation,weather_code,uv_index" +
         "&hourly=weather_code,temperature_2m,precipitation_probability,wind_speed_10m" +
         "&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code" +
-        "&forecast_days=7&timezone=auto";
+        "&forecast_days=7&forecast_hours=12&timezone=auto";
 
     private static final long CACHE_TTL_MS = 90 * 60 * 1000L; // 90 min — covers transient rate-limit periods
 
@@ -40,11 +40,15 @@ public class OpenMeteoService {
     }
 
     public WeatherData getWeather(double lat, double lon) {
-        // Round to ~1 km grid for cache key
-        String key = Math.round(lat * 100) + "," + Math.round(lon * 100);
+        // ~10 km grid: besökare i samma område delar cache-post OCH API-anrop —
+        // vädret hämtas för grid-punkten, inte exakta positionen, annars matchar
+        // cache-innehållet inte nyckeln och varje unik besökare kostar ett anrop
+        double gridLat = Math.round(lat * 10.0) / 10.0;
+        double gridLon = Math.round(lon * 10.0) / 10.0;
+        String key = gridLat + "," + gridLon;
         String url = String.format(OPEN_METEO_URL,
-            String.valueOf(lat).replace(",", "."),
-            String.valueOf(lon).replace(",", "."));
+            String.valueOf(gridLat).replace(",", "."),
+            String.valueOf(gridLon).replace(",", "."));
 
         CacheEntry existing = weatherCache.get(key);
         if (existing != null && System.currentTimeMillis() - existing.timestamp() < CACHE_TTL_MS)
@@ -53,6 +57,7 @@ public class OpenMeteoService {
         try {
             String json = restTemplate.getForObject(url, String.class);
             WeatherData data = parseResponse(json);
+            if (weatherCache.size() > 500) weatherCache.clear();
             weatherCache.put(key, new CacheEntry(data, System.currentTimeMillis()));
             return data;
         } catch (Exception e) {
