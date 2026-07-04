@@ -107,7 +107,7 @@ public class ClaudeService {
         return responseJson.get("choices").get(0).get("message").get("content").asText();
     }
 
-    private String buildFallbackSuggestion(WeatherData weather, String transport) {
+    String buildFallbackSuggestion(WeatherData weather, String transport) {
         double t = weather.getFeelsLike();
         String precip = weather.getPrecipitationDescription();
         double wind = weather.getWindSpeed();
@@ -152,7 +152,7 @@ public class ClaudeService {
         cache.values().removeIf(e -> e.timestamp() < cutoff);
     }
 
-    private String buildCacheKey(WeatherData weather, String transport) {
+    String buildCacheKey(WeatherData weather, String transport) {
         return Math.round(weather.getTemperature()) + "|" +
                Math.round(weather.getFeelsLike()) + "|" +
                Math.round(weather.getWindSpeed()) + "|" +
@@ -173,7 +173,7 @@ public class ClaudeService {
         return minutes <= 1 ? "1 minut" : minutes + " minuter";
     }
 
-    private long parseRetryMs(String body) {
+    long parseRetryMs(String body) {
         try {
             Matcher m = Pattern.compile("try again in ([\\d]+m[\\d.]+s|[\\d.]+s)").matcher(body);
             if (!m.find()) return 60_000L;
@@ -194,7 +194,7 @@ public class ClaudeService {
         return total <= 1 ? "1 minut" : total + " minuter";
     }
 
-    private String buildPrompt(WeatherData weather, String transport) {
+    String buildPrompt(WeatherData weather, String transport) {
         String transportContext = switch (transport.toLowerCase()) {
             case "cykel" -> "Cykel: rörelsefrihet, vindskydd, svettreglering.";
             case "buss"  -> "Buss: väntan utomhus vid hållplats, varmt inomhus — lagerklädsel.";

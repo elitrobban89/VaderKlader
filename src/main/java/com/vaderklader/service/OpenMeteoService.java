@@ -67,7 +67,7 @@ public class OpenMeteoService {
         }
     }
 
-    private WeatherData parseResponse(String json) throws Exception {
+    WeatherData parseResponse(String json) throws Exception {
         JsonNode root    = objectMapper.readTree(json);
         JsonNode current = root.get("current");
 
@@ -156,7 +156,7 @@ public class OpenMeteoService {
         return result;
     }
 
-    private String dailyOutfit(double tempMax, int weatherCode) {
+    String dailyOutfit(double tempMax, int weatherCode) {
         boolean rain = (weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)
                        || weatherCode == 95 || weatherCode == 96 || weatherCode == 99;
         boolean snow = (weatherCode >= 71 && weatherCode <= 77) || weatherCode == 85 || weatherCode == 86;
@@ -175,7 +175,7 @@ public class OpenMeteoService {
         return "Vinterjacka + lager";
     }
 
-    private String toDayNameSv(String dateStr) {
+    String toDayNameSv(String dateStr) {
         try {
             DayOfWeek dow = LocalDate.parse(dateStr).getDayOfWeek();
             return switch (dow) {
@@ -192,7 +192,7 @@ public class OpenMeteoService {
         }
     }
 
-    private String weatherCodeToIcon(int code) {
+    String weatherCodeToIcon(int code) {
         if (code == 0)                               return "☀️";
         if (code <= 2)                               return "🌤️";
         if (code <= 3)                               return "☁️";
@@ -256,12 +256,12 @@ public class OpenMeteoService {
         }
     }
 
-    private String toCardinal(int deg) {
+    String toCardinal(int deg) {
         String[] dirs = {"Norr", "Nordost", "Öst", "Sydost", "Syd", "Sydväst", "Väst", "Nordväst"};
         return dirs[(int) Math.round(deg / 45.0) % 8];
     }
 
-    private int weatherCodeToPrecipCategory(int code) {
+    int weatherCodeToPrecipCategory(int code) {
         if (code == 0 || code <= 3)              return 0;
         if (code == 45 || code == 48)            return 9;
         if (code == 51 || code == 53 || code == 55) return 4;
