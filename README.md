@@ -1,5 +1,7 @@
 # Väder & Kläder
 
+[![Build & Test](https://github.com/elitrobban89/VaderKlader/actions/workflows/maven.yml/badge.svg)](https://github.com/elitrobban89/VaderKlader/actions/workflows/maven.yml)
+
 AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPress via shortcode-plugin med Java-backend.
 
 ## Flöde
