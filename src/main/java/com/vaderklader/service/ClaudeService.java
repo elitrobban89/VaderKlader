@@ -21,7 +21,10 @@ import java.util.regex.Pattern;
 @Service
 public class ClaudeService {
 
-    private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+    // Överstyrbar i tester — pekas mot en lokal stubbserver
+    @Value("${groq.api.url:https://api.groq.com/openai/v1/chat/completions}")
+    private String groqUrl;
+
     private static final String MODEL_PRIMARY = "openai/gpt-oss-120b";
     private static final String MODEL_FALLBACK = "qwen/qwen3.6-27b";
     private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
@@ -102,7 +105,7 @@ public class ClaudeService {
         headers.set("Authorization", "Bearer " + apiKey);
 
         HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(GROQ_URL, request, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(groqUrl, request, String.class);
         JsonNode responseJson = objectMapper.readTree(response.getBody());
         return responseJson.get("choices").get(0).get("message").get("content").asText();
     }
