@@ -65,6 +65,23 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 | Väder | [Open-Meteo](https://open-meteo.com/) — gratis |
 | AI | [Groq](https://console.groq.com/) `openai/gpt-oss-120b` (fallback: `qwen/qwen3.6-27b`) — gratis |
 
+## Tester & CI
+
+29 tester i tre lager — ren logik, HTTP-felvägar och controller-lagret (MockMvc, tjänsterna mockas):
+
+| Testklass | Täcker |
+|-----------|--------|
+| `OpenMeteoServiceTest` (8) | Parsning av riktigt Open-Meteo-fixtur-JSON: regn-varning, tim/dagsprognos, km/h→m/s, väderstreck, klädråd per dag |
+| `ClaudeServiceTest` (11) | Regelbaserad fallback, cachenyckelns avrundning, 429-retry-parsning, promptbygget |
+| `ClaudeServiceHttpTest` (4) | HTTP-felvägar mot lokal stubbserver: 429 sätter kvotspärr + provar fallback-modellen, dubbel-429 ger regelbaserat svar, trasigt JSON kraschar inte |
+| `WeatherOutfitControllerTest` (6) | Koordinatvalidering 400, rate limit-headers + 429 med Retry-After, health med kvotstatus, felformat vid tjänstefel |
+
+```bash
+mvn test
+```
+
+GitHub Actions ([maven.yml](.github/workflows/maven.yml)) kör testerna på varje push — badgen överst visar status.
+
 ## API
 
 ```
