@@ -88,6 +88,8 @@ GitHub Actions ([maven.yml](.github/workflows/maven.yml)) kör testerna på varj
 GET /api/weather-outfit?lat=59.33&lon=18.06&transport=cykel
 ```
 
+Giltiga `transport`-värden: `buss`, `tåg`, `spårvagn`, `tunnelbana`, `cykel`, `bil`, `gång`, `flyg` — okänt värde ger ett generellt klädförslag utan färdmedelskontext.
+
 ## Installation
 
 **Backend på Render:**
@@ -102,9 +104,11 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 ```
 
 **WordPress-plugin:**
-1. Zippa `wordpress/weather-outfit-shortcode.php` i en mapp
-2. Ladda upp via Insticksprogram → Lägg till nytt
+1. Färdig zip finns i `wordpress/vader-klader.zip` (byggs om från `weather-outfit-shortcode.php` vid ändringar)
+2. Ladda upp via Insticksprogram → Lägg till nytt (ersätter befintlig version vid uppgradering)
 3. Lägg till `[weather_outfit]` på valfri sida
+
+Installerad version på elitrobban.se: **2.5** (2026-07-18, tre nya färdmedel). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
 
 ## Footer
 
@@ -120,4 +124,4 @@ Viktigt: använd `/api/health` — inte `/api/weather-outfit` — annars förbru
 
 ## Live
 
-[elitrobban.se](https://elitrobban.se)
+[elitrobban.se/vader](https://elitrobban.se/vader/)
