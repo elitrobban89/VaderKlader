@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.4
+ * Version: 2.5
  * Author: elitrobban.se
  */
 
