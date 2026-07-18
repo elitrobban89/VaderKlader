@@ -53,6 +53,15 @@ class ClaudeServiceTest {
         assertThat(s).contains("halkfria");
     }
 
+    @Test
+    void fallbackFlygGerKabinOchSakerhetskontrollTips() {
+        WeatherData w = weather(10, 8, 3, 0, false, null);
+        String s = service.buildFallbackSuggestion(w, "flyg");
+        assertThat(s)
+                .contains("kabinen")
+                .contains("säkerhetskontrollen");
+    }
+
     // --- buildCacheKey ---
 
     @Test
@@ -99,6 +108,34 @@ class ClaudeServiceTest {
                 .contains("°C")
                 .contains("Färdmedel: cykel")
                 .contains("vindskydd");
+    }
+
+    @Test
+    void promptForFlygFarTerminalOchKabinkontext() {
+        WeatherData w = weather(15, 13, 4, 0, false, null);
+        String p = service.buildPrompt(w, "flyg");
+        assertThat(p)
+                .contains("Färdmedel: flyg")
+                .contains("terminalen")
+                .contains("handbagaget");
+    }
+
+    @Test
+    void promptForSparvagnFarHallplatskontext() {
+        WeatherData w = weather(15, 13, 4, 0, false, null);
+        String p = service.buildPrompt(w, "spårvagn");
+        assertThat(p)
+                .contains("Färdmedel: spårvagn")
+                .contains("hållplats");
+    }
+
+    @Test
+    void promptForTunnelbanaFarStationskontext() {
+        WeatherData w = weather(15, 13, 4, 0, false, null);
+        String p = service.buildPrompt(w, "tunnelbana");
+        assertThat(p)
+                .contains("Färdmedel: tunnelbana")
+                .contains("station");
     }
 
     @Test

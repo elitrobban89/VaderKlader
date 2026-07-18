@@ -6,7 +6,7 @@ AI-genererade klädförslag baserat på väder och färdmedel. Inbyggd i WordPre
 
 ## Flöde
 
-GPS → välj färdmedel (Buss / Tåg / Cykel / Bil / Gång) → väderdata hämtas → AI-klädförslag visas
+GPS → välj färdmedel (Buss / Tåg / Spårvagn / Tunnelbana / Cykel / Bil / Gång / Flyg) → väderdata hämtas → AI-klädförslag visas
 
 ## UI
 Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ 🌧️ ❄️ ⛅) mot mörk blå bakgrund — mobilanpassad med media query under 420px. Startknappen har pulserande glow, shimmer-effekt och float-animation. Väder- och klädförslagsrutorna har mörkt färgtema med Groq-badge.
@@ -21,7 +21,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Väder-fallback-cache** — Open-Meteo-data cachas per position (~10 km-grid, 90 min TTL); vädret hämtas för grid-punkten så närliggande besökare delar både cache-post och API-anrop; `forecast_hours=12` begränsar timprognosen till det som faktiskt används (Open-Meteo viktar dagsgränsen efter datamängd); vid API-fel (429 eller nätverksfel) returneras senaste cachat värde oavsett ålder — inga tomma sidor vid tillfälliga driftstörningar; cache-tak på 500 positioner
 - **Regelbaserat + fallback-modell** — om `openai/gpt-oss-120b`-kvoten är slut provas `qwen/qwen3.6-27b` automatiskt; om det också misslyckas genereras ett regelbaserat klädförslag baserat på upplevd temperatur, nederbörd, vindstyrka och mörkertillstånd (8 temperaturintervall, stöd för cykel, regn, snö, åska, reflexer) — alltid ett svar till användaren
 - **Felhantering** — Groq 429 ger svensk feltext med retry-tid ("Försök igen om X minuter"), stilad felruta i widgeten
-- **Färdmedel** — alla fem alternativ (Buss, Tåg, Cykel, Bil, Gång) har specifik kontext för AI:n
+- **Färdmedel** — alla åtta alternativ (Buss, Tåg, Spårvagn, Tunnelbana, Cykel, Bil, Gång, Flyg) har specifik kontext för AI:n — flyget t.ex. bil/taxi till flygplatsen, varm terminal men sval kabin
 - **UV-index** — visas i väderkortet och skickas till AI:n vid UV ≥ 3, ger råd om solskydd och solhatt
 - **Vindriktning** — Open-Meteo `wind_direction_10m` omvandlas till svensk kardinalriktning (Norr, Nordost osv.), visas i väderkortet och används av AI:n
 - **Optimerad prompt** — ~80 tokens sparas per anrop genom kortare instruktioner, ger ~25% mer kapacitet per dag
@@ -50,7 +50,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **6-timmarsprognos** — horisontell remsa visar "Om Xh", ikon, temperatur, regnchans (%) och vindstyrka (m/s) för nästa 6 timmar
 - **Veckoprognos med klädförslag** — 5-dagarsöversikt med dagsnamn (Idag/Imorgon/Mån/Tis…), väderikon, max- och min-temperatur, samt ett kort regelbaserat klädtips per dag baserat på maxtemperatur och vädertyp (t.ex. "Tröja + jacka", "T-shirt + regnjacka", "Vinterjacka + stövlar") — genereras på backend utan extra AI-anrop
 - **Soluppgång/solnedgång** — visas i väderkortet med klockslag från Open-Meteo daily
-- **Transport-emojis** — färdmedelsetiketter inkluderar emoji: Buss 🚌, Tåg 🚆, Cykel 🚲, Bil 🚗, Gång 🚶
+- **Transport-emojis** — färdmedelsetiketter inkluderar emoji: Buss 🚌, Tåg 🚆, Spårvagn 🚋, Tunnelbana 🚇, Cykel 🚲, Bil 🚗, Gång 🚶, Flyg ✈️
 - **Laddningsspinners** — CSS-spinner visas under GPS-hämtning och klädförslagsgenerering
 - **Naturlig prognos i AI-svar** — kommande regn/snö nämns i klädråden utan att duplicera varningsrutan
 - **GPS-position sparas** — lat/lon cachas i localStorage i 6 timmar, återbesök inom 6h hoppar direkt till transport-valet utan ny GPS-prompt
@@ -67,12 +67,12 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 
 ## Tester & CI
 
-29 tester i tre lager — ren logik, HTTP-felvägar och controller-lagret (MockMvc, tjänsterna mockas):
+33 tester i tre lager — ren logik, HTTP-felvägar och controller-lagret (MockMvc, tjänsterna mockas):
 
 | Testklass | Täcker |
 |-----------|--------|
 | `OpenMeteoServiceTest` (8) | Parsning av riktigt Open-Meteo-fixtur-JSON: regn-varning, tim/dagsprognos, km/h→m/s, väderstreck, klädråd per dag |
-| `ClaudeServiceTest` (11) | Regelbaserad fallback, cachenyckelns avrundning, 429-retry-parsning, promptbygget |
+| `ClaudeServiceTest` (15) | Regelbaserad fallback (inkl. flygets kabin-/säkerhetskontrollstips), cachenyckelns avrundning, 429-retry-parsning, promptbygget med färdmedelskontext (flyg, spårvagn, tunnelbana) |
 | `ClaudeServiceHttpTest` (4) | HTTP-felvägar mot lokal stubbserver: 429 sätter kvotspärr + provar fallback-modellen, dubbel-429 ger regelbaserat svar, trasigt JSON kraschar inte |
 | `WeatherOutfitControllerTest` (6) | Koordinatvalidering 400, rate limit-headers + 429 med Retry-After, health med kvotstatus, felformat vid tjänstefel |
 

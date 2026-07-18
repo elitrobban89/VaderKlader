@@ -18,7 +18,7 @@ function vader_klader_shortcode() {
     (function() {
         var lat = null, lon = null;
         var uid = '<?php echo $uid; ?>';
-        var labelMap = { 'buss': 'Buss &#128652;', 'tåg': 'Tåg &#128646;', 'cykel': 'Cykel &#128690;', 'bil': 'Bil &#128663;', 'gång': 'Gång &#128694;' };
+        var labelMap = { 'buss': 'Buss &#128652;', 'tåg': 'Tåg &#128646;', 'spårvagn': 'Spårvagn &#128651;', 'tunnelbana': 'Tunnelbana &#128647;', 'cykel': 'Cykel &#128690;', 'bil': 'Bil &#128663;', 'gång': 'Gång &#128694;', 'flyg': 'Flyg &#9992;&#65039;' };
         var CACHE_KEY = 'vk_last_result';
         var CACHE_TTL = 30 * 60 * 1000;
         var GPS_KEY = 'vk_gps_position';
@@ -542,9 +542,12 @@ function vader_klader_shortcode() {
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
                 <button onclick="window['<?php echo $uid; ?>_select']('buss')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128652; Buss</button>
                 <button onclick="window['<?php echo $uid; ?>_select']('tåg')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128646; T&aring;g</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('spårvagn')" style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128651; Sp&aring;rvagn</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('tunnelbana')" style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128647; Tunnelbana</button>
                 <button onclick="window['<?php echo $uid; ?>_select']('cykel')" style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128690; Cykel</button>
                 <button onclick="window['<?php echo $uid; ?>_select']('bil')"   style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128663; Bil</button>
                 <button onclick="window['<?php echo $uid; ?>_select']('gång')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#128694; G&aring;ng</button>
+                <button onclick="window['<?php echo $uid; ?>_select']('flyg')"  style="background:#fff; border:2px solid #2196F3; color:#1565C0; padding:12px 20px; border-radius:8px; cursor:pointer; font-size:15px;">&#9992;&#65039; Flyg</button>
             </div>
         </div>
 

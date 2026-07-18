@@ -141,6 +141,8 @@ public class ClaudeService {
         if ("cykel".equalsIgnoreCase(transport) && t < 10) sb.append(" Med cykel: handskar och cykelmössa under hjälmen.");
         else if ("cykel".equalsIgnoreCase(transport) && isRain) sb.append(" Med cykel: vattentäta leggings och regnponcho hjälper.");
 
+        if ("flyg".equalsIgnoreCase(transport)) sb.append(" Med flyg: lagerklädsel — varmt i terminalen men ofta svalt i kabinen; lättavtagbara skor underlättar säkerhetskontrollen.");
+
         return sb.toString();
     }
 
@@ -202,8 +204,11 @@ public class ClaudeService {
             case "cykel" -> "Cykel: rörelsefrihet, vindskydd, svettreglering.";
             case "buss"  -> "Buss: väntan utomhus vid hållplats, varmt inomhus — lagerklädsel.";
             case "tåg"   -> "Tåg: gång till/från station, varmt inne — lagerklädsel.";
+            case "spårvagn" -> "Spårvagn: väntan utomhus vid hållplats, varmt ombord — lagerklädsel.";
+            case "tunnelbana" -> "Tunnelbana: gång till/från station, varmt och trångt i vagnen — lagerklädsel med lättavtagbart ytterplagg.";
             case "bil"   -> "Bil: kort promenad i väder, varmt i bilen — lättavtagbart ytterplagg.";
             case "gång"  -> "Gång: hela vägen utomhus, rörelsefrihet, bekväma skor.";
+            case "flyg"  -> "Flyg: bil eller taxi till flygplatsen så kort utomhusexponering; varmt i terminalen men ofta svalt i kabinen — lagerklädsel, lättavtagbara skor och tunn jacka som ryms i handbagaget.";
             default      -> "";
         };
 
