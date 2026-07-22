@@ -45,6 +45,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Retry-After** — 429-svar inkluderar `retryAfterSeconds` och `Retry-After`-header med exakt väntetid
 - **WordPress content-filter fix** — JavaScript-blocket ligger i `wp_footer`-action (priority 99) för att undvika att WordPress `the_content`-filter konverterar `&&` till `&#038;&#038;` och bryter koden
 - **Refresh-knapp** — uppdaterar väder och klädförslag med ett klick utan att byta färdmedel, rensar localStorage-cachen
+- **Animerad transportscen** — när man valt färdmedel visas en liten scen där fordonet guppar medan marken/rälsen/molnen scrollar förbi, temafärgad per färdmedel (väg för bil/buss/cykel, räls för tåg/spårvagn/tunnelbana, drivande moln för flyg, trottoarprickar för gång) i stället för en vanlig spinner; respekterar `prefers-reduced-motion`, mobilanpassad
 - **Feels like-varning** — blå varningsrad visas när upplevd temperatur avviker mer än 4°C från faktisk (t.ex. "Känns 6°C kallare pga vind")
 - **Nederbördsmängd** — visar mm bredvid beskrivningen när det regnar/snöar, t.ex. "Lätt regn (0.4 mm)"
 - **6-timmarsprognos** — horisontell remsa visar "Om Xh", ikon, temperatur, regnchans (%) och vindstyrka (m/s) för nästa 6 timmar
@@ -108,7 +109,7 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 2. Ladda upp via Insticksprogram → Lägg till nytt (ersätter befintlig version vid uppgradering)
 3. Lägg till `[weather_outfit]` på valfri sida
 
-Installerad version på elitrobban.se: **2.5** (2026-07-18, tre nya färdmedel). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
+Installerad version på elitrobban.se: **2.6** (2026-07-22, animerad transportscen per färdmedel). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
 
 ## Footer
 

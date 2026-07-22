@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.5
+ * Version: 2.6
  * Author: elitrobban.se
  */
 
@@ -215,8 +215,29 @@ function vader_klader_shortcode() {
             window[uid + '_select'](currentTransport);
         };
 
+        // Transportscen per färdmedel — samma entiteter som labelMap
+        var vkScenes = {
+            'buss':{i:'&#128652;',g:'road',c:'#42a5f5'},
+            'tåg':{i:'&#128646;',g:'rail',c:'#ffa726'},
+            'spårvagn':{i:'&#128651;',g:'rail',c:'#ffa726'},
+            'tunnelbana':{i:'&#128647;',g:'rail',c:'#ef5350'},
+            'cykel':{i:'&#128690;',g:'road',c:'#66bb6a'},
+            'bil':{i:'&#128663;',g:'road',c:'#42a5f5'},
+            'gång':{i:'&#128694;',g:'walk',c:'#ab47bc'},
+            'flyg':{i:'&#9992;&#65039;',g:'sky',c:'#29b6f6'}
+        };
+        function vkBuildScene(transport) {
+            var s = vkScenes[transport] || { i:'&#129517;', g:'road', c:'#42a5f5' };
+            var sky = s.g === 'sky';
+            var clouds = sky ? '<span class="vk-cloud" style="top:16px">&#9729;&#65039;</span><span class="vk-cloud" style="top:44px;animation-delay:1.2s">&#9729;&#65039;</span>' : '';
+            var ground = sky ? '' : '<div class="vk-ground ' + s.g + '" style="color:' + s.c + '"></div>';
+            return '<div class="vk-scene' + (sky ? ' sky' : '') + '">' + clouds + '<div class="vk-vehicle">' + s.i + '</div>' + ground + '</div>'
+                 + '<p style="margin:0;color:' + s.c + ';font-size:14px;font-weight:600;">H&auml;mtar kl&auml;df&ouml;rslag&hellip;</p>';
+        }
         window[uid + '_select'] = function(transport) {
             currentTransport = transport;
+            var vkLo = el('loading-outfit');
+            if (vkLo) vkLo.innerHTML = vkBuildScene(transport);
             show('loading-outfit');
 
             var controller = new AbortController();
@@ -500,6 +521,25 @@ function vader_klader_shortcode() {
     .vk-start-btn:active {
         transform: translateY(0) scale(0.97);
         box-shadow: 0 2px 10px rgba(255,193,7,0.4);
+    }
+    /* ── Transportscen: fordonet guppar medan marken/rälsen/molnen scrollar ── */
+    .vk-scene { position: relative; height: 96px; max-width: 320px; margin: 0 auto 14px; border-radius: 14px; overflow: hidden;
+        background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.12); }
+    .vk-vehicle { position: absolute; left: 50%; top: 44%; transform: translate(-50%,-50%); font-size: 42px; z-index: 2;
+        filter: drop-shadow(0 4px 9px rgba(0,0,0,0.35)); animation: vk-bob 0.6s ease-in-out infinite; }
+    @keyframes vk-bob { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%,-64%); } }
+    .vk-ground { position: absolute; left: 0; right: 0; bottom: 16px; height: 4px; background-repeat: repeat-x; animation: vk-scroll 0.5s linear infinite; }
+    @keyframes vk-scroll { to { background-position: -32px 0; } }
+    .vk-ground.road { background-image: linear-gradient(90deg, currentColor 0 16px, transparent 16px 32px); background-size: 32px 4px; }
+    .vk-ground.rail { bottom: 12px; height: 8px; background-image: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 14px); background-size: 14px 8px; }
+    .vk-ground.walk { background-image: radial-gradient(circle, currentColor 1.5px, transparent 2px); background-size: 15px 4px; }
+    .vk-scene.sky { background: linear-gradient(180deg, rgba(41,182,246,0.18), rgba(2,119,189,0.06)); }
+    .vk-scene.sky .vk-vehicle { animation: vk-fly 1.4s ease-in-out infinite; }
+    @keyframes vk-fly { 0%,100% { transform: translate(-50%,-46%) rotate(-4deg); } 50% { transform: translate(-50%,-58%) rotate(2deg); } }
+    .vk-cloud { position: absolute; font-size: 22px; opacity: 0.55; left: -30px; animation: vk-drift 2.6s linear infinite; }
+    @keyframes vk-drift { from { transform: translateX(0); } to { transform: translateX(360px); } }
+    @media (prefers-reduced-motion: reduce) {
+        .vk-vehicle, .vk-ground, .vk-cloud { animation: none; }
     }
     </style>
 
