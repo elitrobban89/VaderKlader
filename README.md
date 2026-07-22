@@ -45,7 +45,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 - **Retry-After** — 429-svar inkluderar `retryAfterSeconds` och `Retry-After`-header med exakt väntetid
 - **WordPress content-filter fix** — JavaScript-blocket ligger i `wp_footer`-action (priority 99) för att undvika att WordPress `the_content`-filter konverterar `&&` till `&#038;&#038;` och bryter koden
 - **Refresh-knapp** — uppdaterar väder och klädförslag med ett klick utan att byta färdmedel, rensar localStorage-cachen
-- **Animerad transportscen** — när man valt färdmedel visas en liten tema-scen (i stället för en vanlig spinner) där fordonet guppar medan bakgrund/mark scrollar förbi: **räls med två skenor + slipers** för tåg/spårvagn/tunnelbana, **scrollande bergssiluett + väg** för cykel, **grönt gräs + övergångsställe (zebra)** för gång, väg för bil/buss och drivande moln för flyg; temafärgad, respekterar `prefers-reduced-motion`, mobilanpassad
+- **Animerad transportscen** — när man valt färdmedel visas en liten tema-scen (i stället för en vanlig spinner) där fordonet guppar medan bakgrund/mark scrollar förbi: **räls med två skenor + slipers** för tåg/spårvagn/tunnelbana, **scrollande bergssiluett + väg** för cykel, **grönt gräs + övergångsställe (zebra)** för gång, **riktig bilväg (asfalt + gul streckad mittlinje) med förbiglidande gatulampor** för bil/buss, och drivande moln för flyg; temafärgad, respekterar `prefers-reduced-motion`, mobilanpassad
 - **Feels like-varning** — blå varningsrad visas när upplevd temperatur avviker mer än 4°C från faktisk (t.ex. "Känns 6°C kallare pga vind")
 - **Nederbördsmängd** — visar mm bredvid beskrivningen när det regnar/snöar, t.ex. "Lätt regn (0.4 mm)"
 - **6-timmarsprognos** — horisontell remsa visar "Om Xh", ikon, temperatur, regnchans (%) och vindstyrka (m/s) för nästa 6 timmar
@@ -109,7 +109,7 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 2. Ladda upp via Insticksprogram → Lägg till nytt (ersätter befintlig version vid uppgradering)
 3. Lägg till `[weather_outfit]` på valfri sida
 
-Installerad version på elitrobban.se: **2.7** (2026-07-22, temaanimation per färdmedel: räls/berg/gräs/väg/moln). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
+Installerad version på elitrobban.se: **2.8** (2026-07-22, temaanimation per färdmedel: räls/berg/gräs/bilväg med gatulampor/moln). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
 
 ## Footer
 

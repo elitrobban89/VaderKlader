@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.7
+ * Version: 2.8
  * Author: elitrobban.se
  */
 
@@ -232,6 +232,7 @@ function vader_klader_shortcode() {
             var inner = '';
             if (sky) inner += '<span class="vk-cloud" style="top:16px">&#9729;&#65039;</span><span class="vk-cloud" style="top:44px;animation-delay:1.2s">&#9729;&#65039;</span>';
             if (g === 'mountain') inner += '<div class="vk-backdrop mountain" style="color:' + s.c + '"></div>';
+            if (g === 'road') inner += '<div class="vk-lamps"></div>'; // gatulampor för bil/buss
             inner += '<div class="vk-vehicle">' + s.i + '</div>';
             if (!sky) {
                 var groundCls = (g === 'mountain') ? 'road' : g; // cykeln rullar på väg framför bergen
@@ -545,7 +546,19 @@ function vader_klader_shortcode() {
     /* Mark */
     .vk-ground { position: absolute; left: 0; right: 0; bottom: 16px; height: 4px; z-index: 2; background-repeat: repeat-x; animation: vk-scroll 0.5s linear infinite; }
     @keyframes vk-scroll { to { background-position: -32px 0; } }
-    .vk-ground.road { background-image: linear-gradient(90deg, currentColor 0 16px, transparent 16px 32px); background-size: 32px 4px; }
+    /* Riktig bilväg: asfalt + gul streckad mittlinje (bil/buss, även cykel framför bergen) */
+    .vk-ground.road { bottom: 0; height: 22px; animation: vk-scroll-road 0.5s linear infinite;
+        background:
+            repeating-linear-gradient(90deg, #ffd54f 0 14px, transparent 14px 34px) 0 center/34px 3px repeat-x,
+            linear-gradient(180deg, rgba(110,120,138,0.55), rgba(60,70,86,0.32)); }
+    @keyframes vk-scroll-road { to { background-position: -34px center, 0 0; } }
+    /* Gatulampor längs vägen (bil/buss) — glödande toppar som glider förbi */
+    .vk-lamps { position: absolute; left: 0; right: 0; bottom: 20px; height: 46px; z-index: 1; pointer-events: none;
+        background:
+            radial-gradient(circle at 5px 5px, rgba(255,236,179,0.95) 0 2.5px, rgba(255,214,120,0.4) 2.5px 8px, transparent 9px) 0 0/94px 46px repeat-x,
+            linear-gradient(90deg, transparent 0 3px, rgba(255,214,120,0.5) 3px 5px, transparent 5px 94px) 0 0/94px 46px repeat-x;
+        animation: vk-scroll-lamps 0.5s linear infinite; }
+    @keyframes vk-scroll-lamps { to { background-position: -94px 0, -94px 0; } }
     /* Räls: två skenor + slipers (tåg/spårvagn/tunnelbana) */
     .vk-ground.rail { bottom: 12px; height: 12px;
         background-image:
@@ -567,7 +580,7 @@ function vader_klader_shortcode() {
     .vk-cloud { position: absolute; font-size: 22px; opacity: 0.55; left: -30px; z-index: 1; animation: vk-drift 2.6s linear infinite; }
     @keyframes vk-drift { from { transform: translateX(0); } to { transform: translateX(360px); } }
     @media (prefers-reduced-motion: reduce) {
-        .vk-vehicle, .vk-ground, .vk-cloud, .vk-backdrop { animation: none; }
+        .vk-vehicle, .vk-ground, .vk-cloud, .vk-backdrop, .vk-lamps { animation: none; }
     }
     </style>
 
