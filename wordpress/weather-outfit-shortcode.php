@@ -16,6 +16,9 @@ function vader_klader_shortcode() {
     add_action('wp_footer', function() use ($uid, $api_url) { ?>
     <script>
     (function() {
+        // Ladda uppstartssplashen (extern fil, serveras av Spring-appen; deployas via git push).
+        (function(){ if(!document.getElementById('vk-splash-js')){ var s=document.createElement('script'); s.id='vk-splash-js'; s.src='https://vaderklader-1.onrender.com/vader-splash.js'; s.defer=true; (document.head||document.documentElement).appendChild(s); } })();
+
         var lat = null, lon = null;
         var uid = '<?php echo $uid; ?>';
         var labelMap = { 'buss': 'Buss &#128652;', 'tåg': 'Tåg &#128646;', 'spårvagn': 'Spårvagn &#128651;', 'tunnelbana': 'Tunnelbana &#128647;', 'cykel': 'Cykel &#128690;', 'bil': 'Bil &#128663;', 'gång': 'Gång &#128694;', 'flyg': 'Flyg &#9992;&#65039;' };
