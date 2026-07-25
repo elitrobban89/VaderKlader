@@ -13,6 +13,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 
 ## Funktioner
 
+- **Uppstartssplash** (`src/main/resources/static/vader-splash.js`, serveras från Render och auto-injiceras av WP-pluginens footer-script) — fullskärms väderscen som tonar **regn → åska → sol** medan statusrader tickar igenom datakällorna (Groq, GPS-koordinater som räknas upp, Open-Meteo, prompt, rate-limit) och tänds gröna. Bakgrunden är en soluppgång vars strålar fjädrar ut runt glaskortet; kortet har varm rim-kant och en spegling som sveper över ytan, och solfasen tänder strålarna. Visas en gång per webbläsare (`localStorage`), tvinga fram med `?splash=1` eller `window.vkReplaySplash()`. Respekterar `prefers-reduced-motion`
 - **Upplevd temperatur** — Open-Meteo `apparent_temperature` visas i väderkortet och skickas till AI:n för mer relevanta klädråd
 - **Prognos** — timprognos för de nästa 6 timmarna. Om regn, snö, åska eller hagel väntas visas en gul varning i väderkortet och AI:n nämner det med ungefärlig tid. Åska och hagel ger specifika råd (söka skydd, cyklister bör stanna)
 - **IP-begränsning** — max 20 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
