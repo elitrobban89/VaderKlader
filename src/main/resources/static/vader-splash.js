@@ -59,26 +59,56 @@
         'display:flex;flex-direction:column;align-items:center;justify-content:center;',
         'padding:30px 22px;text-align:center;',
         "font-family:'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,Roboto,sans-serif;",
-        'background:radial-gradient(ellipse at 50% 0%,#132437,#0a141f 60%,#060d16 100%);',
+        // Soluppgång bakom glaset: het kärna högst upp, guld → amber → djupblå mot botten
+        'background:radial-gradient(78% 52% at 50% -6%,#fff6cf 0%,#ffd873 14%,#ffb43c 27%,#e5822c 40%,',
+          '#8a4a33 57%,#2a2b46 76%,#0b1120 100%);',
         'opacity:1;transition:opacity .5s ease;}',
       '.vksp.vksp-out{opacity:0;}',
-      '.vksp::before{content:"";position:absolute;inset:0;pointer-events:none;',
-        'background:radial-gradient(ellipse at 74% 8%,rgba(255,196,64,.16) 0%,transparent 48%),',
-          'radial-gradient(ellipse at 16% 92%,rgba(56,132,255,.16) 0%,transparent 46%);',
-        'animation:vksp-aurora 7s ease-in-out infinite alternate;}',
+      // Solstrålar från kärnan — maskade så de tonar bort nedåt, bakom glaskortet (z-index 1)
+      '.vksp::before{content:"";position:absolute;inset:-30% -25% 0;pointer-events:none;',
+        'background:repeating-conic-gradient(from 158deg at 50% 6%,',
+          'rgba(255,244,205,.20) 0deg 3.2deg,rgba(255,244,205,0) 3.2deg 13deg);',
+        '-webkit-mask:radial-gradient(70% 62% at 50% 4%,#000 12%,rgba(0,0,0,.55) 45%,transparent 78%);',
+        'mask:radial-gradient(70% 62% at 50% 4%,#000 12%,rgba(0,0,0,.55) 45%,transparent 78%);',
+        'opacity:.75;transition:opacity .9s ease;',
+        'animation:vksp-rays 9s ease-in-out infinite alternate;}',
+      // Solbloom + vinjett som håller uppe textkontrasten mot den ljusa himlen
+      // z-index:0 håller haze/vinjett UNDER glaskortet (.vksp-inner z-index 1) — en pseudo
+      // utan z-index målas efter alla barn och tvättar ur texten
+      '.vksp::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;',
+        'background:radial-gradient(46% 30% at 50% -4%,rgba(255,236,170,.55),transparent 68%),',
+          'radial-gradient(64% 24% at 50% 106%,rgba(255,170,70,.22),transparent 72%),',
+          'linear-gradient(180deg,transparent 42%,rgba(6,10,22,.5) 100%);}',
+      // När scenen slår om till sol tänds hela bakgrunden
+      '.vksp.vksp-sunny::before{opacity:1;}',
       '.vksp-inner{position:relative;z-index:1;width:100%;max-width:400px;',
         'display:flex;flex-direction:column;align-items:center;}',
       // Glaskort — glöden ligger i background-lagret (inte ::before) så texten inte tvättas ur
+      // Glaskortet: solen lyser igenom uppifrån + en spegling som sveper över ytan.
+      // Allt ligger i background-lagret — absolut ::before tvättar ur den statiska texten.
       '.vksp-card{position:relative;width:100%;padding:0 22px 24px;border-radius:26px;overflow:hidden;',
         'display:flex;flex-direction:column;align-items:center;',
-        'background:radial-gradient(120% 50% at 50% 120%,rgba(255,196,64,.16),transparent 70%),',
-          'radial-gradient(120% 40% at 50% -6%,rgba(56,132,255,.2),transparent 66%),',
-          'linear-gradient(160deg,rgba(20,34,54,.78),rgba(9,16,28,.9));',
-        '-webkit-backdrop-filter:blur(26px) saturate(150%);backdrop-filter:blur(26px) saturate(150%);',
-        'border:1px solid rgba(255,255,255,.14);',
-        'box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.2),',
-          'inset 0 0 50px rgba(56,132,255,.06),0 0 90px rgba(255,196,64,.12);',
+        'background:radial-gradient(130% 50% at 50% -10%,rgba(255,214,124,.26),transparent 60%),',
+          'radial-gradient(120% 50% at 50% 118%,rgba(255,170,60,.14),transparent 72%),',
+          // Basen måste bära texten: backdrop-filter släpper igenom solkärnan bakom kortet
+          // (särskilt på mobil där kortet täcker den) — för tunn bas = urtvättad text
+          'linear-gradient(160deg,rgba(21,29,48,.80),rgba(6,10,20,.90));',
+        '-webkit-backdrop-filter:blur(24px) saturate(165%);backdrop-filter:blur(24px) saturate(165%);',
+        'border:1px solid rgba(255,228,168,.26);',
+        'box-shadow:0 30px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,238,200,.42),',
+          'inset 0 -30px 60px rgba(255,170,60,.07),0 0 120px rgba(255,183,66,.22);',
         'animation:vksp-rise .55s ease both;}',
+      // Speglingen som sveper över glaset. MÅSTE vara transform-animerad på ett eget lager —
+      // animerad background-position på ett element med backdrop-filter tvingar om-filtrering
+      // av hela bakgrunden varje bildruta och svälter renderaren (allt annat fastnar då
+      // halvtransparent mitt i sina inanimationer).
+      '.vksp-card::before{content:"";position:absolute;top:0;bottom:0;left:-45%;width:34%;z-index:0;',
+        'pointer-events:none;transform:translateX(0) skewX(-12deg);',
+        'background:linear-gradient(100deg,transparent,rgba(255,255,255,.16) 45%,',
+          'rgba(255,238,200,.10) 62%,transparent);',
+        'animation:vksp-sheen 6.5s ease-in-out 1.2s infinite;}',
+      // Innehållet över speglingen — annars målas texten under pseudon (paint order)
+      '.vksp-card > *{position:relative;z-index:1;}',
       // ── Väderscen ──
       '.vksp-stage{position:relative;width:calc(100% + 44px);margin:0 -22px 6px;height:150px;overflow:hidden;',
         'border-radius:26px 26px 0 0;transition:background .8s ease;',
@@ -144,7 +174,7 @@
       // ── Rader ──
       '.vksp-rows{width:100%;display:flex;flex-direction:column;gap:7px;}',
       '.vksp-row{display:flex;align-items:center;gap:11px;text-align:left;padding:9px 12px;border-radius:13px;',
-        'background:rgba(148,182,230,.08);border:1px solid rgba(148,182,230,.18);',
+        'background:rgba(255,231,178,.07);border:1px solid rgba(255,231,178,.17);',
         'box-shadow:inset 0 1px 0 rgba(255,255,255,.09);',
         'opacity:0;transform:translateY(8px);transition:opacity .35s ease,transform .35s ease,border-color .3s,background .3s,box-shadow .3s;}',
       '.vksp-row.show{opacity:1;transform:translateY(0);}',
@@ -182,7 +212,9 @@
       // keyframes
       '@keyframes vksp-spin{to{transform:rotate(360deg);}}',
       '@keyframes vksp-rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}',
-      '@keyframes vksp-aurora{0%{opacity:.7;}100%{opacity:1;}}',
+      '@keyframes vksp-rays{0%{opacity:.55;transform:scale(1);}100%{opacity:.95;transform:scale(1.06);}}',
+      '@keyframes vksp-sheen{0%{transform:translateX(0) skewX(-12deg);}',
+        '58%,100%{transform:translateX(440%) skewX(-12deg);}}',
       '@keyframes vksp-blink{0%,100%{opacity:1;}50%{opacity:0;}}',
       '@keyframes vksp-pop{0%{transform:scale(.4);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}',
       '@keyframes vksp-onlpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(1.35);}}',
@@ -190,7 +222,11 @@
       '@keyframes vksp-strike{0%,18%,100%{opacity:0;transform:translateX(-50%) scale(.9);}6%{opacity:1;transform:translateX(-50%) scale(1);}10%{opacity:.2;}13%{opacity:1;}}',
       '@keyframes vksp-flash{0%,16%,100%{opacity:0;}6%{opacity:.85;}10%{opacity:.15;}13%{opacity:.7;}}',
       '@media (max-width:520px){',
-        '.vksp{justify-content:flex-start;padding:24px 12px 20px;}',
+        // Solkärnan lyfts högre upp på mobil så den inte hamnar rakt bakom textytan
+        // Lite mer sidluft på mobil så solstrålarna ramar in glaset i stället för att skymmas
+        '.vksp{justify-content:flex-start;padding:22px 20px 20px;',
+          'background:radial-gradient(96% 40% at 50% -14%,#fff6cf 0%,#ffd873 12%,#ffb43c 24%,',
+            '#e5822c 36%,#8a4a33 54%,#2a2b46 74%,#0b1120 100%);}',
         '.vksp-card{padding:0 15px 20px;border-radius:22px;}',
         '.vksp-stage{width:calc(100% + 30px);margin:0 -15px 6px;height:128px;border-radius:22px 22px 0 0;}',
         '.vksp-title{font-size:1.16rem;margin-top:13px;}',
@@ -338,6 +374,7 @@
       if (!stage) return;
       stage.classList.remove('rain', 'storm', 'sun');
       stage.classList.add(name);
+      overlay.classList.toggle('vksp-sunny', name === 'sun'); // tänder solstrålarna bakom glaset
       if (phaseEl) phaseEl.textContent = label;
     }
 
