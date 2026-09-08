@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.8
+ * Version: 2.9
  * Author: elitrobban.se
  */
 
@@ -298,6 +298,10 @@ function vader_klader_shortcode() {
                     clearTimeout(startbesked);
                     if (err.name === 'AbortError') {
                         showError('Servern svarade inte inom två minuter. Försök igen.');
+                    } else if (err instanceof TypeError) {
+                        // Ett nätverksfel kastar TypeError MED message ("Failed to fetch"), så
+                        // reservtexten nedan nåddes aldrig — användaren fick engelsk feltext.
+                        showError('Kunde inte nå servern. Kontrollera uppkopplingen och försök igen.');
                     } else {
                         showError(err.message || 'Kunde inte nå servern. Försök igen senare.');
                     }
@@ -310,7 +314,10 @@ function vader_klader_shortcode() {
             var wind     = el('wind').textContent;
             var winddir  = el('winddir').textContent;
             var outfit   = el('outfit').textContent;
-            var transport = el('transport-label').textContent;
+            // WordPress byter alla emoji mot <img class="emoji">, så etikettens textContent blir
+            // "Bil " — utan ikon och med hängande blanksteg före kolon. Ta färdmedlet från koden.
+            var transport = (currentTransport || el('transport-label').textContent).trim();
+            transport = transport.charAt(0).toUpperCase() + transport.slice(1);
             var text = 'Väder just nu: ' + temp + '°C (upplevd ' + feels + '°C), ' +
                        'Vind ' + wind + ' m/s från ' + winddir + '\n\n' +
                        'Klädförslag för ' + transport + ':\n' + outfit + '\n\n' +
@@ -378,6 +385,9 @@ function vader_klader_shortcode() {
             if (cached) {
                 lat = cached.data.lat;
                 lon = cached.data.lon;
+                // Utan den här raden är "Uppdatera väder" död efter en omladdning: _refresh
+                // bailar på !currentTransport och gör då ingenting alls, helt tyst.
+                currentTransport = cached.transport;
                 displayResult(cached.data, cached.transport);
                 try {
                     var r = localStorage.getItem('vk_rate_remaining');
@@ -695,10 +705,12 @@ function vader_klader_shortcode() {
             </div>
         </div>
 
-        <div id="<?php echo $uid; ?>-no-gps" style="display:none;">
-            <p style="font-size:14px; margin-bottom:14px; color:#ccc;">Kunde inte h&auml;mta din position via GPS.</p>
+        <!-- Egen m&ouml;rk platta: texterna h&auml;r &auml;r ljusa och stod tidigare n&auml;stan vitt-p&aring;-vitt
+             mot sidans ljusa bakgrund. Plattan g&ouml;r rutan l&auml;sbar oavsett sidans tema. -->
+        <div id="<?php echo $uid; ?>-no-gps" style="display:none; background:#1a3a5c; border-left:4px solid #64b5f6; padding:16px; border-radius:6px;">
+            <p style="font-size:14px; margin-bottom:14px; color:#e3f2fd;">Kunde inte h&auml;mta din position via GPS.</p>
             <div style="margin-bottom:16px;">
-                <p style="font-size:14px; margin-bottom:8px; color:#ccc;"><strong>S&ouml;k efter din stad:</strong></p>
+                <p style="font-size:14px; margin-bottom:8px; color:#e3f2fd;"><strong>S&ouml;k efter din stad:</strong></p>
                 <div style="display:flex; gap:8px;">
                     <input id="<?php echo $uid; ?>-city-input" type="text" placeholder="t.ex. Stockholm"
                         style="flex:1; padding:10px 14px; border-radius:6px; border:1px solid #555; background:#1a2030; color:#fff; font-size:14px; outline:none;"
@@ -711,7 +723,7 @@ function vader_klader_shortcode() {
                 <p id="<?php echo $uid; ?>-city-error" style="display:none; color:#ef5350; font-size:13px; margin-top:6px;"></p>
             </div>
             <button onclick="window['<?php echo $uid; ?>_start']()"
-                style="background:none; border:1px solid #666; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#aaa;">
+                style="background:none; border:1px solid #64b5f6; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#90caf9;">
                 F&ouml;rs&ouml;k med GPS igen
             </button>
         </div>

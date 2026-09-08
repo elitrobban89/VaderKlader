@@ -110,7 +110,7 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 2. Ladda upp via Insticksprogram → Lägg till nytt (ersätter befintlig version vid uppgradering)
 3. Lägg till `[weather_outfit]` på valfri sida
 
-Installerad version på elitrobban.se: **2.8** (2026-07-22, temaanimation per färdmedel: räls/berg/gräs/bilväg med gatulampor/moln). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
+Installerad version på elitrobban.se: **2.9** (2026-09-08, fyra fel funna vid en skarp genomgång av hela flödet i webbläsaren: "Uppdatera väder" var död efter omladdning, nätverksfel visade engelska "Failed to fetch", delningstexten tappade färdmedelsikonen till WordPress emoji-bilder, och no-gps-rutan var nästan vitt på vitt). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
 
 ## Footer
 
