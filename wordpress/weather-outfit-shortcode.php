@@ -242,7 +242,7 @@ function vader_klader_shortcode() {
                 inner += '<div class="vk-ground ' + groundCls + '" style="color:' + s.c + '"></div>';
             }
             return '<div class="vk-scene' + (sky ? ' sky' : '') + '">' + inner + '</div>'
-                 + '<p style="margin:0;color:' + s.c + ';font-size:14px;font-weight:600;">H&auml;mtar kl&auml;df&ouml;rslag&hellip;</p>';
+                 + '<p class="vk-vantetext" style="margin:0;color:' + s.c + ';font-size:14px;font-weight:600;">H&auml;mtar kl&auml;df&ouml;rslag&hellip;</p>';
         }
         window[uid + '_select'] = function(transport) {
             currentTransport = transport;
@@ -251,11 +251,24 @@ function vader_klader_shortcode() {
             show('loading-outfit');
 
             var controller = new AbortController();
-            var timeout = setTimeout(function() { controller.abort(); }, 30000);
+            // Tjänsten ligger på Renders free tier: den sover in efter 15 minuters stiltje och
+            // vaknar på ~115-121 s (uppmätt). 30 s betydde alltså att de TVÅ första sökningarna
+            // efter en paus ALLTID klipptes av — inte för att servern var trasig utan för att
+            // klienten gav upp mitt i uppvakningen, och tredje trycket "råkade" ligga efter den.
+            // Taket måste vara större än uppvakningen, annars byter man en väntan mot ett
+            // felmeddelande som ljuger.
+            var timeout = setTimeout(function() { controller.abort(); }, 130000);
+            // En sovande tjänst svarar inte på åtta sekunder. Utan besked ser widgeten hängd ut
+            // och man trycker igen — säg i stället vad som faktiskt pågår.
+            var startbesked = setTimeout(function() {
+                var p = vkLo && vkLo.querySelector('.vk-vantetext');
+                if (p) p.innerHTML = 'Tj&auml;nsten startar&hellip; f&ouml;rsta s&ouml;kningen kan ta upp till tv&aring; minuter.';
+            }, 8000);
 
             fetch('<?php echo $api_url; ?>?lat=' + lat + '&lon=' + lon + '&transport=' + encodeURIComponent(transport), { signal: controller.signal })
                 .then(function(r) {
                     clearTimeout(timeout);
+                    clearTimeout(startbesked);
                     var remaining = parseInt(r.headers.get('X-RateLimit-Remaining'));
                     var limit     = parseInt(r.headers.get('X-RateLimit-Limit'));
                     return r.json().then(function(data) {
@@ -282,8 +295,9 @@ function vader_klader_shortcode() {
                 })
                 .catch(function(err) {
                     clearTimeout(timeout);
+                    clearTimeout(startbesked);
                     if (err.name === 'AbortError') {
-                        showError('Servern svarade inte inom 30 sekunder. Försök igen.');
+                        showError('Servern svarade inte inom två minuter. Försök igen.');
                     } else {
                         showError(err.message || 'Kunde inte nå servern. Försök igen senare.');
                     }
