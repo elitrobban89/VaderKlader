@@ -10,18 +10,34 @@
   var SEEN_KEY = 'vk_splash_seen_v1';
   var GPS_KEY  = 'vk_gps_position';
   var FORCE = /[?&]splash=1/.test(location.search);
-  var GPS_ROW = 1;
+  var GPS_ROW     = 1;
+  var VADER_ROW   = 3; // väder just nu (hämtas live från Open-Meteo)
+  var FARDMEDEL_ROW = 5; // färdmedlen rabblas upp
 
   var ROWS = [
     { ic: '🤖', t: 'Groq AI',       s: 'gpt-oss-120b \xb7 modell laddad', tag: 'ONLINE' },
     { ic: '📍', t: 'GPS-position',  kind: 'gps' },
     { ic: '🛰️', t: 'Open-Meteo',    s: 'V\xe4der-API \xb7 200 OK', tag: 'LIVE' },
-    { ic: '🧩', t: 'Prompt',        s: 'V\xe4derkontext byggd f\xf6r AI', tag: 'OK' },
-    { ic: '🌡️', t: 'Parametrar',    s: 'Temp, k\xe4nns-som, vind &amp; fukt' },
+    { ic: '🌡️', t: 'V\xe4der just nu', kind: 'vader', tag: 'LIVE' },
     { ic: '🌧️', t: 'Nederb\xf6rd',   s: 'Regn, sn\xf6 &amp; nederb\xf6rdsrisk' },
+    { ic: '🚌', t: 'F\xe4rdmedel',   kind: 'fardmedel' },
+    { ic: '🧩', t: 'Prompt',        s: 'V\xe4derkontext byggd f\xf6r AI', tag: 'OK' },
     { ic: '⏱️', t: 'Rate-limit',    s: 'API-kvot \xb7 klar', tag: 'OK' },
     { ic: '👕', t: 'Kl\xe4dr\xe5d',     s: 'AI-f\xf6rslag initieras…' }
   ];
+
+  // Appens åtta färdmedel, i knapparnas ordning (weather-outfit-shortcode.php). Raden
+  // rabblar upp dem medan den laddar, så besökaren ser vad appen faktiskt kan råda om.
+  var FARDMEDEL = [
+    '🚌 Buss', '🚆 T\xe5g', '🚋 Sp\xe5rvagn', '🚇 Tunnelbana',
+    '🚲 Cykel', '🚗 Bil', '🚶 G\xe5ng', '✈️ Flyg'
+  ];
+
+  // Väder just nu — hämtas DIREKT från Open-Meteo, inte via vår egen backend. Backenden
+  // ligger på Renders gratisnivå och kan behöva 30–120 s på sig att vakna; splashen är
+  // just det som ska visas MEDAN den vaknar, så den får aldrig vänta på den. Open-Meteo
+  // är gratis, kräver ingen nyckel och tillåter anrop från webbläsaren.
+  var vader = null;
 
   var BOOT_PHRASES = ['ansluter till groq api', 'GET open-meteo /forecast → 200', 'bygger v\xe4der-prompt', 'genererar ditt kl\xe4dr\xe5d'];
 
@@ -130,19 +146,41 @@
       '.vksp-drop{position:absolute;top:-14px;width:2px;height:14px;border-radius:2px;',
         'background:linear-gradient(180deg,rgba(174,214,255,0),rgba(174,214,255,.9));',
         'animation:vksp-fall .7s linear infinite;}',
-      // sol
+      // ── Solen ──────────────────────────────────────────────────────────────
+      // Kärnan är en skiva med varm kant, och glöden ligger i box-shadow i tre lager och
+      // ANDAS. Inget pseudoelement läggs ovanpå kärnan: en absolut ::after över en yta med
+      // egen bakgrund lägger en slöja i stället för att lysa.
       '.vksp-sun{position:absolute;top:24px;left:50%;transform:translateX(-50%) scale(.3);opacity:0;',
-        'width:56px;height:56px;border-radius:50%;transition:opacity .8s ease,transform .8s ease;',
-        'background:radial-gradient(circle at 40% 35%,#fff3c4,#ffcf3f 55%,#ff9e2c);',
-        'box-shadow:0 0 30px rgba(255,193,64,.85),0 0 70px rgba(255,193,64,.55);}',
-      '.vksp-stage.sun .vksp-sun{opacity:1;transform:translateX(-50%) scale(1);}',
-      '.vksp-rays{position:absolute;top:24px;left:50%;width:56px;height:56px;margin-left:-28px;opacity:0;',
+        'width:58px;height:58px;border-radius:50%;transition:opacity .8s ease,transform .8s ease;',
+        'background:radial-gradient(circle at 38% 32%,#fffdf0 0%,#fff3b0 26%,#ffd14a 58%,#ffa22b 82%,#f5861f 100%);',
+        'box-shadow:0 0 22px rgba(255,206,80,.9),0 0 55px rgba(255,170,45,.6),0 0 110px rgba(255,140,30,.35);}',
+      '.vksp-stage.sun .vksp-sun{opacity:1;transform:translateX(-50%) scale(1);',
+        'animation:vksp-sun-glod 3.6s ease-in-out infinite;}',
+      '@keyframes vksp-sun-glod{',
+        '0%,100%{box-shadow:0 0 20px rgba(255,206,80,.8),0 0 50px rgba(255,170,45,.5),0 0 100px rgba(255,140,30,.28);}',
+        '50%{box-shadow:0 0 34px rgba(255,226,130,1),0 0 80px rgba(255,185,60,.72),0 0 150px rgba(255,150,35,.45);}}',
+      // Strålarna: TVÅ lager. Långa var 24:e grad (15 st) och korta mitt emellan — alltså
+      // 30 strålar i stället för de 12 breda kilar som fick solen att se ut som ett
+      // pajdiagram. Radialmasken tonar ut spetsarna så strålen slutar i ljus, inte i en kant.
+      '.vksp-rays{position:absolute;top:24px;left:50%;width:58px;height:58px;margin-left:-29px;opacity:0;',
         'transition:opacity .8s ease .1s;}',
-      '.vksp-rays::before{content:"";position:absolute;inset:-22px;border-radius:50%;',
-        'background:conic-gradient(rgba(255,205,80,.55) 0 8deg,transparent 8deg 30deg);',
-        '-webkit-mask:radial-gradient(transparent 30px,#000 31px);mask:radial-gradient(transparent 30px,#000 31px);',
-        'animation:vksp-spin 9s linear infinite;}',
-      '.vksp-stage.sun .vksp-rays{opacity:1;}',
+      // Bredden är mätt i skärmbild: 2,2° blev 1,7 px vid strålens mitt och syntes knappt
+      // alls. 6° långa och 3,5° korta läser som strålar hela vägen ut.
+      '.vksp-rays::before{content:"";position:absolute;inset:-38px;border-radius:50%;',
+        // REPEATING-conic, inte conic: en vanlig conic-gradient spänner över hela varvet EN
+        // gång, så mönstret "6° stråle, 18° tomt" gav exakt EN stråle per lager — två i bild,
+        // vilket är precis vad närbilden visade innan.
+        'background:repeating-conic-gradient(from 0deg,rgba(255,214,102,.95) 0 6deg,transparent 6deg 24deg);',
+        '-webkit-mask:radial-gradient(circle,transparent 30px,#000 35px,#000 50px,transparent 66px);',
+        'mask:radial-gradient(circle,transparent 30px,#000 35px,#000 50px,transparent 66px);',
+        'animation:vksp-spin 34s linear infinite;}',
+      '.vksp-rays::after{content:"";position:absolute;inset:-22px;border-radius:50%;',
+        'background:repeating-conic-gradient(from 12deg,rgba(255,244,196,.8) 0 3.5deg,transparent 3.5deg 24deg);',
+        '-webkit-mask:radial-gradient(circle,transparent 28px,#000 31px,#000 41px,transparent 51px);',
+        'mask:radial-gradient(circle,transparent 28px,#000 31px,#000 41px,transparent 51px);',
+        'animation:vksp-spin 22s linear infinite reverse;}',
+      '.vksp-stage.sun .vksp-rays{opacity:1;animation:vksp-stralar-puls 3.6s ease-in-out infinite;}',
+      '@keyframes vksp-stralar-puls{0%,100%{transform:scale(1);opacity:.85;}50%{transform:scale(1.06);opacity:1;}}',
       // blixt + flash
       '.vksp-bolt{position:absolute;top:44px;left:50%;transform:translateX(-50%) scale(.9);width:26px;height:44px;opacity:0;',
         'filter:drop-shadow(0 0 8px rgba(255,224,120,.9));}',
@@ -264,8 +302,64 @@
     '</div>';
   }
 
+  function nr(v, dec) {
+    return Number(v).toLocaleString('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+
+  function vaderText() {
+    if (!vader) return 'H\xe4mtar temperatur, vind &amp; fukt…';
+    var s = '<b>' + nr(vader.temp, 1) + ' \xb0C</b>';
+    if (vader.kanns != null) s += ' \xb7 k\xe4nns som <b>' + nr(vader.kanns, 0) + ' \xb0C</b>';
+    if (vader.vind != null)  s += ' \xb7 <b>' + nr(vader.vind, 1) + ' m/s</b>';
+    if (vader.fukt != null)  s += ' \xb7 <b>' + Math.round(vader.fukt) + ' %</b>';
+    return s;
+  }
+
+  function hamtaVader() {
+    var u = 'https://api.open-meteo.com/v1/forecast?latitude=' + gpsTarget.lat.toFixed(4) +
+            '&longitude=' + gpsTarget.lon.toFixed(4) +
+            '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m' +
+            '&wind_speed_unit=ms&timezone=auto';
+    fetch(u)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.current || d.current.temperature_2m == null) return;
+        vader = {
+          temp:  d.current.temperature_2m,
+          kanns: d.current.apparent_temperature,
+          fukt:  d.current.relative_humidity_2m,
+          vind:  d.current.wind_speed_10m
+        };
+        var el = suba(VADER_ROW);
+        if (el) el.innerHTML = vaderText();
+      })
+      .catch(function () {});   // uteblir svaret står den beskrivande texten kvar
+  }
+
+  // Rabblar upp färdmedlen i raden medan den laddar och landar på hela antalet.
+  function rabblaFardmedel() {
+    if (animated.fardmedel) return;
+    animated.fardmedel = true;
+    var el = suba(FARDMEDEL_ROW);
+    if (!el) return;
+    // ETT färdmedel i taget, inte en växande lista: raden är enradig med ellips, och en
+    // lista hade klippts mitt i ordet efter tre poster.
+    var i = 0;
+    (function nasta() {
+      if (i >= FARDMEDEL.length) {
+        el.innerHTML = '<b>' + FARDMEDEL.length + '</b> f\xe4rdmedel \xb7 v\xe4lj ditt efter splashen';
+        return;
+      }
+      el.innerHTML = '<b>' + FARDMEDEL[i] + '</b> \xb7 ' + (i + 1) + '/' + FARDMEDEL.length;
+      i++;
+      setTimeout(nasta, 210);
+    })();
+  }
+
   function subFor(row) {
-    if (row.kind === 'gps') return 'Avl\xe4ser koordinater…';
+    if (row.kind === 'gps')       return 'Avl\xe4ser koordinater…';
+    if (row.kind === 'vader')     return vaderText();
+    if (row.kind === 'fardmedel') return 'L\xe4ser in f\xe4rdmedel…';
     return row.s;
   }
 
@@ -398,6 +492,7 @@
     }
 
     overlay.querySelector('.vksp-skip').addEventListener('click', finish);
+    hamtaVader();
 
     if (reduce) {
       setPhase('sun', 'Sol');
@@ -409,6 +504,9 @@
       });
       animated.gps = true;
       var gEl = suba(GPS_ROW); if (gEl) gEl.innerHTML = gpsText(1);
+      animated.fardmedel = true;
+      var fEl = suba(FARDMEDEL_ROW);
+      if (fEl) fEl.innerHTML = '<b>' + FARDMEDEL.length + '</b> f\xe4rdmedel \xb7 buss, t\xe5g, cykel, bil …';
       if (fill) fill.style.width = '100%';
       setPct(pctEl, 100);
       timers.push(setTimeout(finish, 2200));
@@ -419,12 +517,15 @@
     timers.push(setTimeout(function () { setPhase('storm', '\xc5ska'); }, 1900));
     timers.push(setTimeout(function () { setPhase('sun', 'Sol'); }, 3500));
 
-    var START = 420, STAGGER = 470, FLIP = 340;
+    // STAGGER sänkt 470 → 420 när raderna blev nio: total tid före "klädråd redo" ska
+    // ligga kvar där den var, annars betalar besökaren för de nya raderna i väntan.
+    var START = 420, STAGGER = 420, FLIP = 320;
     rows.forEach(function (row, i) {
       var appear = START + i * STAGGER;
       timers.push(setTimeout(function () {
         row.classList.add('show');
         if (i === GPS_ROW) animateGps();
+        if (i === FARDMEDEL_ROW) rabblaFardmedel();
       }, appear));
       timers.push(setTimeout(function () {
         row.classList.add('done');

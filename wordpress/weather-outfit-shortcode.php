@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 2.9
+ * Version: 3.0
  * Author: elitrobban.se
  */
 
@@ -35,6 +35,52 @@ function vader_klader_shortcode() {
             ['step-start','loading-gps','step-transport','loading-outfit','result','no-gps','error']
                 .forEach(function(p) { el(p).style.display = 'none'; });
             el(suffix).style.display = 'block';
+            if (suffix === 'result') rullaTillResultat();
+        }
+
+        // Resultatet ligger under formuläret, och på en telefon hamnade "Väder just nu"
+        // under vikkanten — man fick sitt klädråd utan att se det. Rulla fram det.
+        // Väntar en bildruta: korten har precis bytt från display:none och har ingen höjd
+        // förrän layouten räknats om, så en mätning direkt här hade siktat på fel plats.
+        function rullaTillResultat() {
+            requestAnimationFrame(function() { setTimeout(function() {
+                var box = el('result');
+                if (!box) return;
+                var lugnt = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                var topp = box.getBoundingClientRect().top + window.pageYOffset - fastHuvudHojd() - 14;
+                if (topp < 0) topp = 0;
+                try { window.scrollTo({ top: topp, behavior: lugnt ? 'auto' : 'smooth' }); }
+                catch (e) { window.scrollTo(0, topp); }
+            }, 60); });
+        }
+
+        /** Sidhuvud som ligger kvar överst (sticky/fixed) och annars hade täckt kortets topp. */
+        function fastHuvudHojd() {
+            var hojd = 0;
+            var kand = document.querySelectorAll('header, #wpadminbar, .site-header, [class*="sticky"]');
+            for (var i = 0; i < kand.length; i++) {
+                var pos = '';
+                try { pos = getComputedStyle(kand[i]).position; } catch (e) { continue; }
+                if (pos !== 'fixed' && pos !== 'sticky') continue;
+                var r = kand[i].getBoundingClientRect();
+                if (r.top <= 4 && r.bottom > hojd) hojd = r.bottom;
+            }
+            return Math.min(hojd, 160);
+        }
+
+        /**
+         * Väderikonerna ska röra på sig — regn faller, solen snurrar långsamt, molnen
+         * glider, snön singlar. Klassen väljs på ikonens tecken, för det är det enda vi
+         * har: API:t skickar en emoji, ingen vädertyp.
+         */
+        function ikonKlass(ikon) {
+            var i = String(ikon || '');
+            if (i.indexOf('☀') >= 0 || i.indexOf('☁') < 0 && i.indexOf('🌞') >= 0) return 'vk-ikon sol';
+            if (i.indexOf('⛈') >= 0 || i.indexOf('⚡') >= 0) return 'vk-ikon aska';
+            if (i.indexOf('🌧') >= 0 || i.indexOf('🌦') >= 0 || i.indexOf('🌈') >= 0) return 'vk-ikon regn';
+            if (i.indexOf('❄') >= 0 || i.indexOf('🌨') >= 0) return 'vk-ikon sno';
+            if (i.indexOf('🌫') >= 0) return 'vk-ikon dimma';
+            return 'vk-ikon moln';
         }
 
         function showError(msg) {
@@ -120,6 +166,7 @@ function vader_klader_shortcode() {
             var strip = el('hourly-strip');
             if (data.hourlyForecast && data.hourlyForecast.length > 0) {
                 var html = '';
+                var hi = 0;
                 data.hourlyForecast.forEach(function(h) {
                     var probHtml = (h.precipitationProbability > 0)
                         ? '<span style="font-size:10px;color:#64b5f6;">' + h.precipitationProbability + '%</span>'
@@ -127,13 +174,14 @@ function vader_klader_shortcode() {
                     var windHtml = (h.windSpeed >= 2)
                         ? '<span style="font-size:10px;color:#aaa;">&#128168; ' + h.windSpeed.toFixed(1) + '</span>'
                         : '<span style="font-size:10px;color:transparent;">-</span>';
-                    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;">' +
-                            '<span style="font-size:11px;color:#90caf9;">Om ' + h.hoursFromNow + 'h</span>' +
-                            '<span style="font-size:22px;line-height:1;">' + h.icon + '</span>' +
-                            '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(h.temperature) + '&deg;</span>' +
+                    html += '<div class="vk-timme" style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;animation-delay:' + (hi * 0.07).toFixed(2) + 's;">' +
+                            '<span style="font-size:12px;color:#a9d6ff;">Om ' + h.hoursFromNow + 'h</span>' +
+                            '<span class="' + ikonKlass(h.icon) + '" style="font-size:23px;line-height:1;animation-delay:' + (hi * 0.18).toFixed(2) + 's;">' + h.icon + '</span>' +
+                            '<span style="font-size:13px;color:#eaf4ff;font-weight:600;">' + Math.round(h.temperature) + '&deg;</span>' +
                             probHtml +
                             windHtml +
                             '</div>';
+                    hi++;
                 });
                 strip.innerHTML = html;
                 strip.style.display = 'flex';
@@ -153,14 +201,16 @@ function vader_klader_shortcode() {
             el('daily-strip').style.display = 'none';
             if (data.dailyForecast && data.dailyForecast.length > 0) {
                 var dhtml = '';
+                var di = 0;
                 data.dailyForecast.slice(0, 5).forEach(function(d) {
-                    dhtml += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;">' +
-                             '<span style="font-size:11px;color:#90caf9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + d.dayName + '</span>' +
-                             '<span style="font-size:20px;line-height:1;">' + d.icon + '</span>' +
-                             '<span style="font-size:12px;color:#e3f2fd;">' + Math.round(d.tempMax) + '&deg;</span>' +
-                             '<span style="font-size:11px;color:#90caf9;">' + Math.round(d.tempMin) + '&deg;</span>' +
-                             (d.outfit ? '<span style="font-size:9px;color:#b0bec5;text-align:center;line-height:1.3;margin-top:2px;word-break:break-word;">' + d.outfit + '</span>' : '') +
+                    dhtml += '<div class="vk-timme" style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;animation-delay:' + (di * 0.08).toFixed(2) + 's;">' +
+                             '<span style="font-size:12px;color:#a9d6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + d.dayName + '</span>' +
+                             '<span class="' + ikonKlass(d.icon) + '" style="font-size:21px;line-height:1;animation-delay:' + (di * 0.21).toFixed(2) + 's;">' + d.icon + '</span>' +
+                             '<span style="font-size:13px;color:#eaf4ff;font-weight:600;">' + Math.round(d.tempMax) + '&deg;</span>' +
+                             '<span style="font-size:12px;color:#a9d6ff;">' + Math.round(d.tempMin) + '&deg;</span>' +
+                             (d.outfit ? '<span style="font-size:10px;color:#c8d9e8;text-align:center;line-height:1.35;margin-top:2px;word-break:break-word;">' + d.outfit + '</span>' : '') +
                              '</div>';
+                    di++;
                 });
                 el('daily-strip').innerHTML = dhtml;
                 el('daily-strip').style.display = 'flex';
@@ -606,8 +656,136 @@ function vader_klader_shortcode() {
     @keyframes vk-fly { 0%,100% { transform: translate(-50%,-46%) rotate(-4deg); } 50% { transform: translate(-50%,-58%) rotate(2deg); } }
     .vk-cloud { position: absolute; font-size: 22px; opacity: 0.55; left: -30px; z-index: 1; animation: vk-drift 2.6s linear infinite; }
     @keyframes vk-drift { from { transform: translateX(0); } to { transform: translateX(360px); } }
+    /* ── Resultatskärmen ──────────────────────────────────────────────────────
+       "Väder just nu" låg på en fast #1a3a5c och klädrådet på en brun #3a2a00. Båda
+       vandrar nu genom appens egna toner, som CarAdvice-ribban. ALLA toner i banden är
+       mörka med flit: texten är ljus, och en ton som drar upp mot ljust hade ätit
+       läsbarheten. Ljusaste tonen i väderbandet (#1d4470) mot brödtexten (#eaf4ff) ger
+       ~9:1 i kontrast, alltså långt över AA. */
+    .vk-now, .vk-outfit {
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .vk-now {
+        background: linear-gradient(115deg,
+            #0d2137 0%, #123353 18%, #1d4470 36%, #17395e 54%, #113a52 72%, #0d2137 100%);
+        background-size: 230% 100%;
+        animation: vk-now-skift 20s ease-in-out infinite alternate;
+        border-left: 4px solid #64b5f6;
+        padding: 18px 18px 16px;
+        margin-bottom: 14px;
+    }
+    /* Entrén OCH färgvandringen på samma element måste stå i EN animation-lista.
+       Två klasser med var sin animation-egenskap är inte additivt: den senare regeln
+       ersätter hela listan, och korten stod still på 0 % (uppmätt: background-position
+       rörde sig inte alls). Därför räknas båda upp här i stället. */
+    .vk-now.vk-reveal {
+        animation: vk-reveal-in 0.5s cubic-bezier(.22,1,.36,1) both,
+                   vk-now-skift 20s ease-in-out infinite alternate;
+    }
+    .vk-outfit.vk-reveal {
+        animation: vk-reveal-in 0.5s cubic-bezier(.22,1,.36,1) 0.12s both,
+                   vk-now-skift 24s ease-in-out infinite alternate-reverse;
+    }
+    /* Klädrådet: samma rörelse, men en blå-violett-teal-linje så korten inte blir samma bild.
+       Accentkanten skiftar med (border-image kan inte animeras — kanten är därför ett eget
+       lager längst till vänster). */
+    .vk-outfit {
+        background: linear-gradient(115deg,
+            #0b2b45 0%, #143c66 20%, #1b3f74 38%, #14405f 58%, #0f3b4d 76%, #0b2b45 100%);
+        background-size: 230% 100%;
+        animation: vk-now-skift 24s ease-in-out infinite alternate-reverse;
+        padding: 18px;
+    }
+    .vk-outfit::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; z-index: 2;
+        background: linear-gradient(180deg, #64b5f6, #4dd0e1 45%, #7986cb);
+        background-size: 100% 220%;
+        animation: vk-kant-skift 9s ease-in-out infinite alternate;
+    }
+    @keyframes vk-now-skift  { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+    @keyframes vk-kant-skift { 0% { background-position: 50% 0%; } 100% { background-position: 50% 100%; } }
+    /* Ljusstråk som sveper över korten en gång när resultatet visas. Ligger i ett eget
+       lager UNDER texten (z-index) — ett stråk ovanpå tvättar ur den. */
+    .vk-now::after, .vk-outfit::after {
+        content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 32%; z-index: 0;
+        background: linear-gradient(100deg, transparent, rgba(255,255,255,0.13), transparent);
+        transform: skewX(-14deg);
+        animation: vk-strak 2.6s ease-out 0.35s 1;
+        pointer-events: none;
+    }
+    .vk-outfit::after { animation-delay: 0.6s; }
+    @keyframes vk-strak { to { left: 130%; } }
+    .vk-now > *, .vk-outfit > * { position: relative; z-index: 1; }
+
+    /* Läsbarhet: större brödtext, luftigare rader och ljusare sekundärfärg
+       (#90caf9 → #a9d6ff) — den gamla tonen låg nära gränsen mot den mörka botten. */
+    .vk-now-title {
+        margin: 0 0 10px; color: #bfe0ff; font-size: 17px; font-weight: 800;
+        letter-spacing: 0.2px;
+    }
+    .vk-now-row { margin: 7px 0; color: #eaf4ff; font-size: 15px; line-height: 1.55; }
+    .vk-now-row strong { color: #ffffff; font-weight: 700; }
+    .vk-now-sub { color: #a9d6ff; font-size: 13.5px; }
+    .vk-outfit-title {
+        margin: 0 0 10px; color: #cfe9ff; font-size: 17px; font-weight: 800;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .vk-outfit-text { margin: 0 0 14px; line-height: 1.65; color: #f2f8ff; font-size: 15px; }
+
+    /* Kortens entré: resultatet glider upp i tur och ordning i stället för att bara finnas. */
+    @keyframes vk-reveal-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .vk-reveal { animation: vk-reveal-in 0.5s cubic-bezier(.22,1,.36,1) both; }
+    .vk-reveal-2 { animation-delay: 0.12s; }
+    .vk-reveal-3 { animation-delay: 0.24s; }
+    .vk-reveal-4 { animation-delay: 0.34s; }
+
+    /* Timstrimman: varje timme poppar in efter den förra. */
+    @keyframes vk-timme-in { from { opacity: 0; transform: translateY(8px) scale(.94); } to { opacity: 1; transform: none; } }
+    .vk-timme { animation: vk-timme-in 0.38s cubic-bezier(.22,1,.36,1) both; border-radius: 8px; transition: background 0.2s; }
+    .vk-timme:hover { background: rgba(255,255,255,0.08); }
+
+    /* Groq-brickan: SAMMA officiella logotyp som bilrådgivningen använder, i stället för en
+       egen textrad. Bilden serveras av CarAdvice — den tjänsten ligger på betald plan och är
+       alltid vaken, medan console.groq.com är en tredjepartsvärd som kan byta sökväg. */
+    .vk-groq {
+        display: inline-flex; align-items: center; gap: 7px;
+        margin-top: 4px; padding: 5px 12px 5px 9px;
+        background: rgba(245,80,54,0.09);
+        border: 1px solid rgba(245,80,54,0.28);
+        border-radius: 20px; text-decoration: none;
+        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .vk-groq:hover { background: rgba(245,80,54,0.16); border-color: rgba(245,80,54,0.5); transform: translateY(-1px); }
+    .vk-groq-logo { display: block; width: 53px; height: 32px; }
+
+    /* Väderikonerna rör på sig — var väderslag på sitt sätt. Klassen sätts i JS utifrån
+       ikonens tecken (ikonKlass), för API:t skickar en emoji och ingen vädertyp.
+       display:inline-block KRÄVS: transform biter inte på ett rent inline-element. */
+    .vk-ikon { display: inline-block; will-change: transform; }
+    .vk-ikon.sol    { animation: vk-ikon-sol 9s linear infinite; }
+    .vk-ikon.regn   { animation: vk-ikon-regn 1.9s ease-in-out infinite; }
+    .vk-ikon.sno    { animation: vk-ikon-sno 4.5s ease-in-out infinite; }
+    .vk-ikon.moln   { animation: vk-ikon-moln 4s ease-in-out infinite; }
+    .vk-ikon.dimma  { animation: vk-ikon-dimma 5s ease-in-out infinite; }
+    .vk-ikon.aska   { animation: vk-ikon-aska 3.4s ease-in-out infinite; }
+    @keyframes vk-ikon-sol   { to { transform: rotate(360deg); } }
+    @keyframes vk-ikon-regn  { 0%,100% { transform: translateY(-2px); } 55% { transform: translateY(2px); } }
+    @keyframes vk-ikon-sno   { 0%,100% { transform: translate(-2px,-1px) rotate(-8deg); } 50% { transform: translate(2px,2px) rotate(8deg); } }
+    @keyframes vk-ikon-moln  { 0%,100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+    @keyframes vk-ikon-dimma { 0%,100% { opacity: .55; transform: translateX(-2px); } 50% { opacity: 1; transform: translateX(2px); } }
+    @keyframes vk-ikon-aska  { 0%,88%,100% { transform: none; filter: none; }
+                               90% { transform: scale(1.16); filter: drop-shadow(0 0 7px rgba(255,224,120,.95)); }
+                               94% { transform: none; filter: none; }
+                               96% { transform: scale(1.1); filter: drop-shadow(0 0 6px rgba(255,224,120,.8)); } }
+
     @media (prefers-reduced-motion: reduce) {
         .vk-vehicle, .vk-ground, .vk-cloud, .vk-backdrop, .vk-lamps { animation: none; }
+        .vk-now, .vk-outfit, .vk-now::after, .vk-outfit::after, .vk-outfit::before,
+        .vk-reveal, .vk-timme, .vk-ikon { animation: none; }
+        .vk-now, .vk-outfit { background-position: 50% 50%; }
     }
     </style>
 
@@ -665,30 +843,31 @@ function vader_klader_shortcode() {
         </div>
 
         <div id="<?php echo $uid; ?>-result" style="display:none;">
-            <div style="background:#1a3a5c; border-left:4px solid #64b5f6; padding:16px; border-radius:6px; margin-bottom:12px;">
-                <h3 style="margin:0 0 8px 0; color:#90caf9;">V&auml;der just nu</h3>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>&deg;C &nbsp;<span style="color:#90caf9; font-size:13px;">(upplevd: <span id="<?php echo $uid; ?>-feels"></span>&deg;C)</span></p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span style="color:#90caf9; font-size:13px;">fr&aring;n <span id="<?php echo $uid; ?>-winddir"></span></span></p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
-                <p style="margin:4px 0; color:#e3f2fd;"><strong>Nederb&ouml;rd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
-                <div id="<?php echo $uid; ?>-feelslike-warn" style="display:none; margin-top:8px; padding:6px 10px; background:rgba(100,181,246,0.12); border-left:3px solid #64b5f6; border-radius:4px; color:#90caf9; font-size:13px;"></div>
-                <p id="<?php echo $uid; ?>-uv-row" style="margin:4px 0; display:none; color:#e3f2fd;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
-                <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:8px 12px; background:rgba(255,193,7,0.15); border-left:3px solid #FFC107; border-radius:4px; color:#FFD54F; font-size:13px;">
+            <div class="vk-now vk-reveal">
+                <h3 class="vk-now-title">&#127780; V&auml;der just nu</h3>
+                <p class="vk-now-row"><strong>Temperatur:</strong> <span id="<?php echo $uid; ?>-temp"></span>&deg;C &nbsp;<span class="vk-now-sub">(upplevd: <span id="<?php echo $uid; ?>-feels"></span>&deg;C)</span></p>
+                <p class="vk-now-row"><strong>Vind:</strong> <span id="<?php echo $uid; ?>-wind"></span> m/s &nbsp;<span class="vk-now-sub">fr&aring;n <span id="<?php echo $uid; ?>-winddir"></span></span></p>
+                <p class="vk-now-row"><strong>Luftfuktighet:</strong> <span id="<?php echo $uid; ?>-humidity"></span>%</p>
+                <p class="vk-now-row"><strong>Nederb&ouml;rd:</strong> <span id="<?php echo $uid; ?>-precip"></span></p>
+                <div id="<?php echo $uid; ?>-feelslike-warn" style="display:none; margin-top:8px; padding:7px 11px; background:rgba(100,181,246,0.16); border-left:3px solid #64b5f6; border-radius:4px; color:#cfe9ff; font-size:14px; line-height:1.5;"></div>
+                <p id="<?php echo $uid; ?>-uv-row" class="vk-now-row" style="display:none;"><strong>UV-index:</strong> <span id="<?php echo $uid; ?>-uv"></span></p>
+                <div id="<?php echo $uid; ?>-forecast-box" style="display:none; margin-top:10px; padding:9px 12px; background:rgba(255,193,7,0.18); border-left:3px solid #FFC107; border-radius:4px; color:#ffe08a; font-size:14px; line-height:1.5;">
                     &#9888; <span id="<?php echo $uid; ?>-forecast-text"></span>
                 </div>
-                <p id="<?php echo $uid; ?>-sunrise-row" style="margin:4px 0; display:none; color:#e3f2fd; font-size:13px;">&#127774; <span id="<?php echo $uid; ?>-sunrise-val"></span> &nbsp;&#127762; <span id="<?php echo $uid; ?>-sunset-val"></span></p>
-                <p id="<?php echo $uid; ?>-hourly-label" style="display:none; margin:10px 0 4px 0; font-size:11px; color:#90caf9; text-transform:uppercase; letter-spacing:0.5px;">N&auml;sta 6 timmar</p>
-                <div id="<?php echo $uid; ?>-hourly-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; padding:10px 8px; background:rgba(255,255,255,0.05); border-radius:6px;"></div>
+                <p id="<?php echo $uid; ?>-sunrise-row" class="vk-now-row" style="display:none; font-size:14px;">&#127774; <span id="<?php echo $uid; ?>-sunrise-val"></span> &nbsp;&#127762; <span id="<?php echo $uid; ?>-sunset-val"></span></p>
+                <p id="<?php echo $uid; ?>-hourly-label" style="display:none; margin:12px 0 5px 0; font-size:12px; color:#a9d6ff; text-transform:uppercase; letter-spacing:0.6px; font-weight:700;">N&auml;sta 6 timmar</p>
+                <div id="<?php echo $uid; ?>-hourly-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; padding:10px 8px; background:rgba(255,255,255,0.07); border-radius:8px;"></div>
             </div>
-            <div style="background:#3a2a00; border-left:4px solid #FFC107; padding:16px; border-radius:6px;">
-                <h3 style="margin:0 0 8px 0; color:#FFD54F; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">AI-kl&auml;df&ouml;rslag &mdash; <span id="<?php echo $uid; ?>-transport-label"></span></h3>
-                <p id="<?php echo $uid; ?>-outfit" style="margin:0 0 14px 0; line-height:1.6; color:#fff8e1;"></p>
-                <a href="https://groq.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(245,80,54,0.15);border:1px solid rgba(245,80,54,0.4);border-radius:20px;font-size:11px;font-weight:700;color:#ff7a5c;letter-spacing:0.4px;text-decoration:none;">
-                    &#9889; Drivs av Groq AI
+            <div class="vk-outfit vk-reveal">
+                <h3 class="vk-outfit-title">&#128085; AI-kl&auml;df&ouml;rslag &mdash; <span id="<?php echo $uid; ?>-transport-label"></span></h3>
+                <p id="<?php echo $uid; ?>-outfit" class="vk-outfit-text"></p>
+                <a class="vk-groq" href="https://groq.com" target="_blank" rel="noopener noreferrer">
+                    <img class="vk-groq-logo" src="https://caradvice.onrender.com/powered-by-groq-dark.svg"
+                         alt="Powered by Groq for fast inference." width="53" height="32">
                 </a>
             </div>
-            <p id="<?php echo $uid; ?>-daily-label" style="display:none; margin:12px 0 4px 0; font-size:11px; color:#90caf9; text-transform:uppercase; letter-spacing:0.5px;">Veckoprognos</p>
-            <div id="<?php echo $uid; ?>-daily-strip" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; padding:10px 8px; background:#1a2a3a; border-radius:6px;"></div>
+            <p id="<?php echo $uid; ?>-daily-label" style="display:none; margin:14px 0 5px 0; font-size:12px; color:#a9d6ff; text-transform:uppercase; letter-spacing:0.6px; font-weight:700;">Veckoprognos</p>
+            <div id="<?php echo $uid; ?>-daily-strip" class="vk-reveal vk-reveal-3" style="display:none; flex-wrap:nowrap; gap:4px; justify-content:space-between; padding:10px 8px; background:#15283c; border-radius:8px;"></div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:6px;">
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <button onclick="window['<?php echo $uid; ?>_reset']()" style="background:none; border:1px solid #aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; color:#555;">

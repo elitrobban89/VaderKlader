@@ -13,7 +13,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 
 ## Funktioner
 
-- **Uppstartssplash** (`src/main/resources/static/vader-splash.js`, serveras från Render och auto-injiceras av WP-pluginens footer-script) — fullskärms väderscen som tonar **regn → åska → sol** medan statusrader tickar igenom datakällorna (Groq, GPS-koordinater som räknas upp, Open-Meteo, prompt, rate-limit) och tänds gröna. Bakgrunden är en soluppgång vars strålar fjädrar ut runt glaskortet; kortet har varm rim-kant och en spegling som sveper över ytan, och solfasen tänder strålarna. Visas en gång per webbläsare (`localStorage`), tvinga fram med `?splash=1` eller `window.vkReplaySplash()`. Respekterar `prefers-reduced-motion`
+- **Uppstartssplash** (`src/main/resources/static/vader-splash.js`, serveras från Render och auto-injiceras av WP-pluginens footer-script) — fullskärms väderscen som tonar **regn → åska → sol** medan nio statusrader tickar igenom datakällorna och tänds gröna: Groq, GPS-koordinater som räknas upp, Open-Meteo, **väder just nu** (temperatur, känns-som, vind och fukt hämtade LIVE från Open-Meteo med den cachade positionen — inte via vår egen backend, som kan sova), nederbörd, **färdmedlen som rabblas upp** ett i taget (appens åtta), prompt, rate-limit och klädråd. Solen har trettio strålar i två lager (`repeating-conic-gradient` — en vanlig `conic-gradient` ger EN stråle per lager, vilket är precis vad närbilden avslöjade) och en glöd som andas. Visas en gång per webbläsare (`localStorage`), tvinga fram med `?splash=1` eller `window.vkReplaySplash()`. Respekterar `prefers-reduced-motion`
 - **Upplevd temperatur** — Open-Meteo `apparent_temperature` visas i väderkortet och skickas till AI:n för mer relevanta klädråd
 - **Prognos** — timprognos för de nästa 6 timmarna. Om regn, snö, åska eller hagel väntas visas en gul varning i väderkortet och AI:n nämner det med ungefärlig tid. Åska och hagel ger specifika råd (söka skydd, cyklister bör stanna)
 - **IP-begränsning** — max 20 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
@@ -110,7 +110,7 @@ java -jar target/vader-klader-1.0-SNAPSHOT.jar
 2. Ladda upp via Insticksprogram → Lägg till nytt (ersätter befintlig version vid uppgradering)
 3. Lägg till `[weather_outfit]` på valfri sida
 
-Installerad version på elitrobban.se: **2.9** (2026-09-08, fyra fel funna vid en skarp genomgång av hela flödet i webbläsaren: "Uppdatera väder" var död efter omladdning, nätverksfel visade engelska "Failed to fetch", delningstexten tappade färdmedelsikonen till WordPress emoji-bilder, och no-gps-rutan var nästan vitt på vitt). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
+Installerad version på elitrobban.se: **2.9** (plugin **3.0** ligger i repot och väntar på uppladdning) (2026-09-08, fyra fel funna vid en skarp genomgång av hela flödet i webbläsaren: "Uppdatera väder" var död efter omladdning, nätverksfel visade engelska "Failed to fetch", delningstexten tappade färdmedelsikonen till WordPress emoji-bilder, och no-gps-rutan var nästan vitt på vitt). Håll `Version:`-raden i PHP-headern i synk mellan repo och WordPress vid varje ändring.
 
 ## Footer
 
