@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 3.0
+ * Version: 3.1
  * Author: elitrobban.se
  */
 
@@ -122,8 +122,27 @@ function vader_klader_shortcode() {
             elem.textContent = remaining + '/' + limit + ' anrop kvar' + (remaining <= 3 ? ' (!)' : '');
         }
 
+        // Färdmedlets ikon i rubriken ska röra på sig som väderikonerna: bussen och bilen
+        // guppar framåt, tåget glider på rälsen, cykeln trampar, fotgängaren stegar och
+        // planet stiger. Klassen väljs på färdmedlet — här VET vi vilket det är, till
+        // skillnad från väderikonerna där bara emojin finns.
+        var fardIkonKlass = {
+            'buss': 'rull', 'bil': 'rull',
+            'tåg': 'rals', 'spårvagn': 'rals', 'tunnelbana': 'rals',
+            'cykel': 'trampa', 'gång': 'stega', 'flyg': 'flyg'
+        };
+
+        function fardLabel(transport) {
+            var txt = labelMap[transport] || transport;
+            // labelMap är "Namn &#1234;" — ikonen är det sista ordet och får ett eget lager.
+            var i = txt.lastIndexOf(' ');
+            if (i < 0) return txt;
+            return txt.slice(0, i) + ' <span class="vk-fardikon vk-f-' +
+                   (fardIkonKlass[transport] || 'rull') + '">' + txt.slice(i + 1) + '</span>';
+        }
+
         function displayResult(data, transport) {
-            el('transport-label').innerHTML = labelMap[transport] || transport;
+            el('transport-label').innerHTML = fardLabel(transport);
             el('temp').textContent     = data.temperature.toFixed(1);
             el('feels').textContent    = data.feelsLike != null ? data.feelsLike.toFixed(1) : '-';
             el('wind').textContent     = data.windSpeed.toFixed(1);
@@ -747,6 +766,20 @@ function vader_klader_shortcode() {
     .vk-timme { animation: vk-timme-in 0.38s cubic-bezier(.22,1,.36,1) both; border-radius: 8px; transition: background 0.2s; }
     .vk-timme:hover { background: rgba(255,255,255,0.08); }
 
+    /* Färdmedlets ikon i klädrådets rubrik — ett eget lager så transform biter (ett rent
+       inline-element går inte att transformera). Klassen sätts i JS (fardLabel). */
+    .vk-fardikon { display: inline-block; will-change: transform; }
+    .vk-f-rull   { animation: vk-f-rull 2.6s ease-in-out infinite; }
+    .vk-f-rals   { animation: vk-f-rals 3.2s ease-in-out infinite; }
+    .vk-f-trampa { animation: vk-f-trampa 1.5s ease-in-out infinite; }
+    .vk-f-stega  { animation: vk-f-stega 1.1s ease-in-out infinite; }
+    .vk-f-flyg   { animation: vk-f-flyg 3.4s ease-in-out infinite; }
+    @keyframes vk-f-rull   { 0%,100% { transform: translateX(-3px) rotate(-1.5deg); } 50% { transform: translateX(3px) rotate(1.5deg); } }
+    @keyframes vk-f-rals   { 0% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 100% { transform: translateX(-5px); } }
+    @keyframes vk-f-trampa { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-3px) rotate(3deg); } }
+    @keyframes vk-f-stega  { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-2px) rotate(4deg); } }
+    @keyframes vk-f-flyg   { 0%,100% { transform: translate(-3px,2px) rotate(-4deg); } 50% { transform: translate(3px,-4px) rotate(4deg); } }
+
     /* Groq-brickan: SAMMA officiella logotyp som bilrådgivningen använder, i stället för en
        egen textrad. Bilden serveras av CarAdvice — den tjänsten ligger på betald plan och är
        alltid vaken, medan console.groq.com är en tredjepartsvärd som kan byta sökväg. */
@@ -784,7 +817,7 @@ function vader_klader_shortcode() {
     @media (prefers-reduced-motion: reduce) {
         .vk-vehicle, .vk-ground, .vk-cloud, .vk-backdrop, .vk-lamps { animation: none; }
         .vk-now, .vk-outfit, .vk-now::after, .vk-outfit::after, .vk-outfit::before,
-        .vk-reveal, .vk-timme, .vk-ikon { animation: none; }
+        .vk-reveal, .vk-timme, .vk-ikon, .vk-fardikon { animation: none; }
         .vk-now, .vk-outfit { background-position: 50% 50%; }
     }
     </style>
