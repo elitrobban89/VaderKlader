@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
- * Version: 3.1
+ * Version: 3.2
  * Author: elitrobban.se
  */
 
@@ -31,20 +31,27 @@ function vader_klader_shortcode() {
 
         function el(suffix) { return document.getElementById(uid + '-' + suffix); }
 
+        // Stegen som sidan ska följa med till. Resultatet ligger under formuläret (man fick
+        // sitt klädråd utan att se det), och vägen TILLBAKA behöver samma hjälp: efter "Välj
+        // nytt färdmedel" stod sidan kvar långt ned medan färdmedelsknapparna låg ovanför
+        // vikkanten. Rullningen går åt båda hållen — den siktar på elementets plats, inte
+        // på en riktning.
+        //
+        // step-start och felrutorna står MED FLIT inte här: show('step-start') körs även vid
+        // sidladdning och när en nedräkning löper ut, och då ska sidan inte rycka till.
+        var RULLSTEG = { 'step-transport': 1, 'loading-outfit': 1, 'result': 1 };
+
         function show(suffix) {
             ['step-start','loading-gps','step-transport','loading-outfit','result','no-gps','error']
                 .forEach(function(p) { el(p).style.display = 'none'; });
             el(suffix).style.display = 'block';
-            if (suffix === 'result') rullaTillResultat();
+            if (RULLSTEG[suffix]) rullaTill(el(suffix));
         }
 
-        // Resultatet ligger under formuläret, och på en telefon hamnade "Väder just nu"
-        // under vikkanten — man fick sitt klädråd utan att se det. Rulla fram det.
-        // Väntar en bildruta: korten har precis bytt från display:none och har ingen höjd
+        // Väntar en bildruta: rutan har precis bytt från display:none och har ingen höjd
         // förrän layouten räknats om, så en mätning direkt här hade siktat på fel plats.
-        function rullaTillResultat() {
+        function rullaTill(box) {
             requestAnimationFrame(function() { setTimeout(function() {
-                var box = el('result');
                 if (!box) return;
                 var lugnt = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 var topp = box.getBoundingClientRect().top + window.pageYOffset - fastHuvudHojd() - 14;
