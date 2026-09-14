@@ -63,7 +63,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 | Del | Teknik |
 |-----|--------|
 | Frontend | WordPress (PHP), JavaScript |
-| Backend | Java 21, Spring Boot, Docker — hostad på [Render](https://render.com) |
+| Backend | Java 25, Spring Boot 3.5.16, Docker — hostad på [Render](https://render.com) |
 | Väder | [Open-Meteo](https://open-meteo.com/) — gratis |
 | AI | [Groq](https://console.groq.com/) `openai/gpt-oss-120b` (fallback: `qwen/qwen3.6-27b`) — gratis |
 
