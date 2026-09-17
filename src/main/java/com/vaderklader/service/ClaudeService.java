@@ -26,7 +26,10 @@ public class ClaudeService {
     private String groqUrl;
 
     private static final String MODEL_PRIMARY = "openai/gpt-oss-120b";
-    private static final String MODEL_FALLBACK = "qwen/qwen3.6-27b";
+    // qwen3.6-27b avvecklades av Groq 2026-09-17 och fanns samma dag INTE KVAR i kontots
+    // modellkatalog - fallbacken var alltsa dod. 3.8 ar efterforjaren och ar live-provad
+    // samma dag med reasoning_effort "none" och "low": bada ger rent svar.
+    private static final String MODEL_FALLBACK = "qwen/qwen3.8-27b";
     private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
     private static final int MAX_CACHE_SIZE = 500;
 
@@ -90,8 +93,12 @@ public class ClaudeService {
         body.put("model", model);
         body.put("temperature", 0.4);
         body.put("max_tokens", 400);
-        // gpt-oss är en reasoning-modell — utan low-effort kan reasoning äta hela tokenbudgeten
-        if (model.startsWith("openai/")) body.put("reasoning_effort", "low");
+        // BÅDA modellerna resonerar, och med max_tokens 400 kan resonemanget äta hela budgeten
+        // så att content kommer tillbaka TOMT. gpt-oss tar low/medium/high; qwen tar dessutom
+        // "none", som stänger av resonemanget helt — live-provat mot qwen3.8-27b 2026-09-17.
+        // Fallbacken hade ingen effort alls fram till dess, alltså den svagaste inställningen
+        // på just den modell som bara används när den primära redan sagt nej.
+        body.put("reasoning_effort", model.startsWith("openai/") ? "low" : "none");
         ArrayNode messages = body.putArray("messages");
         ObjectNode system = messages.addObject();
         system.put("role", "system");
