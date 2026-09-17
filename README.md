@@ -69,14 +69,14 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 
 ## Tester & CI
 
-33 tester i tre lager — ren logik, HTTP-felvägar och controller-lagret (MockMvc, tjänsterna mockas):
+35 tester i tre lager — ren logik, HTTP-felvägar och controller-lagret (MockMvc, tjänsterna mockas):
 
 | Testklass | Täcker |
 |-----------|--------|
 | `OpenMeteoServiceTest` (8) | Parsning av riktigt Open-Meteo-fixtur-JSON: regn-varning, tim/dagsprognos, km/h→m/s, väderstreck, klädråd per dag |
 | `ClaudeServiceTest` (15) | Regelbaserad fallback (inkl. flygets kabin-/säkerhetskontrollstips), cachenyckelns avrundning, 429-retry-parsning, promptbygget med färdmedelskontext (flyg, spårvagn, tunnelbana) |
 | `ClaudeServiceHttpTest` (4) | HTTP-felvägar mot lokal stubbserver: 429 sätter kvotspärr + provar fallback-modellen, dubbel-429 ger regelbaserat svar, trasigt JSON kraschar inte |
-| `WeatherOutfitControllerTest` (6) | Koordinatvalidering 400, rate limit-headers + 429 med Retry-After, health med kvotstatus, felformat vid tjänstefel |
+| `WeatherOutfitControllerTest` (8) | Koordinatvalidering 400, rate limit-headers + 429 med Retry-After, health med kvotstatus, felformat vid tjänstefel. **`/api/version` svarar med commit OCH modellkedjan** (2026-09-17): Groq avvecklade `qwen/qwen3.6-27b`, som var den hårdkodade fallbacken här, och när bytet till 3.8 var pushat gick det **inte att se utifrån** om tjänsten kört igång den nya koden — `/api/health` svarar `groq: ok`, men det betyder bara att kvoten inte är slut och säger ingenting om vare sig commit eller modellnamn. Ett anrop svarar nu på båda frågorna. Provet låser dessutom att endpointen fungerar **när kvoten är slut**: det är precis då man vill kunna se vilken kod som kör |
 
 ```bash
 mvn test
@@ -88,7 +88,14 @@ GitHub Actions ([maven.yml](.github/workflows/maven.yml)) kör testerna på varj
 
 ```
 GET /api/weather-outfit?lat=59.33&lon=18.06&transport=cykel
+GET /api/health     -> { status, groq }  - groq: "ok" betyder att KVOTEN inte ar slut
+GET /api/version    -> { version, commit, branch, models, uptimeSeconds }
 ```
+
+**`/api/version` finns for att svara pa "hann deployen ut?" utan Render-dashboarden.** `commit` och
+`branch` kommer ur Renders miljovariabler (lokalt blir de `unknown`/`local`), och `models` ar
+modellkedjan koden faktiskt ar byggd med - primar forst, fallback sist. Lag `uptimeSeconds` betyder
+att instansen nyss startat om, vilket ar normalt pa gratisnivan och inte ett fel.
 
 Giltiga `transport`-värden: `buss`, `tåg`, `spårvagn`, `tunnelbana`, `cykel`, `bil`, `gång`, `flyg` — okänt värde ger ett generellt klädförslag utan färdmedelskontext.
 

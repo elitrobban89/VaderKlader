@@ -7,10 +7,13 @@ import com.vaderklader.model.WeatherOutfitResponse;
 import com.vaderklader.service.ClaudeService;
 import com.vaderklader.service.OpenMeteoService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,9 +28,49 @@ public class WeatherOutfitController {
     private final Map<String, List<Long>> ipRequestLog = new ConcurrentHashMap<>();
     private static final int MAX_REQUESTS_PER_HOUR = 20;
 
+    // Fylls av Maven vid bygget (@project.version@) respektive av Render vid deploy
+    // (RENDER_GIT_COMMIT/RENDER_GIT_BRANCH). Lokalt är de två sistnämnda tomma.
+    @Value("${app.version:unknown}")
+    private String appVersion;
+
+    @Value("${app.commit:}")
+    private String appCommit;
+
+    @Value("${app.branch:}")
+    private String appBranch;
+
+    private final Instant startedAt = Instant.now();
+
     public WeatherOutfitController(OpenMeteoService openMeteoService, ClaudeService claudeService) {
         this.openMeteoService = openMeteoService;
         this.claudeService = claudeService;
+    }
+
+    /**
+     * Vilken kod som faktiskt kör — svarar på "hann deployen ut?" utan Render-dashboarden.
+     *
+     * <p>Tillkom 2026-09-17. Groq avvecklade qwen3.6-27b, som var den hårdkodade fallbacken
+     * här, och när bytet till 3.8 var pushat gick det inte att se utifrån om tjänsten kört
+     * igång den nya koden: {@code /api/health} svarar {@code groq: ok}, men det betyder bara
+     * att kvoten inte är slut och säger ingenting om vare sig commit eller modellnamn.
+     * <b>Därför bär svaret också modellkedjan</b> — då besvarar ETT anrop båda frågorna, och
+     * det var precis de två som inte gick att besvara den dagen.
+     *
+     * <p>{@code uptimeSeconds} avslöjar dessutom spindown: tjänsten ligger på gratisnivån, så
+     * en låg siffra betyder att instansen nyss startat om — inte att något är fel.
+     */
+    @GetMapping("/version")
+    public ResponseEntity<?> version() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("version", appVersion);
+        out.put("commit", appCommit.isBlank() ? "unknown"
+                : appCommit.substring(0, Math.min(7, appCommit.length())));
+        out.put("commitFull", appCommit.isBlank() ? "unknown" : appCommit);
+        out.put("branch", appBranch.isBlank() ? "local" : appBranch);
+        out.put("models", ClaudeService.models());
+        out.put("startedAt", startedAt.toString());
+        out.put("uptimeSeconds", Instant.now().getEpochSecond() - startedAt.getEpochSecond());
+        return ResponseEntity.ok(out);
     }
 
     @GetMapping("/health")

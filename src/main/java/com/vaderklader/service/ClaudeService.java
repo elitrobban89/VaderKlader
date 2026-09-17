@@ -13,6 +13,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -32,6 +33,20 @@ public class ClaudeService {
     private static final String MODEL_FALLBACK = "qwen/qwen3.8-27b";
     private static final long CACHE_TTL_MS = 30 * 60 * 1000L;
     private static final int MAX_CACHE_SIZE = 500;
+
+    /**
+     * Modellerna tjänsten faktiskt är byggd med, i kedjans ordning.
+     *
+     * <p>Exponeras för {@code /api/version}. Skälet är konkret: när Groq avvecklade
+     * qwen3.6-27b den 2026-09-17 gick det inte att se utifrån VILKEN modell den driftsatta
+     * koden pekade på — {@code /api/health} svarar {@code groq: ok}, men det betyder bara att
+     * kvoten inte är slut och säger ingenting om modellnamnen. CarAdvice har en riktig
+     * modellkoll mot Groqs katalog; den här listan är det billiga svaret på frågan
+     * "vilken kod kör där ute".
+     */
+    public static List<String> models() {
+        return List.of(MODEL_PRIMARY, MODEL_FALLBACK);
+    }
 
     @Value("${groq.api.key}")
     private String apiKey;

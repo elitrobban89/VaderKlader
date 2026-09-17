@@ -115,4 +115,32 @@ class WeatherOutfitControllerTest {
            .andExpect(jsonPath("$.groq").value("quota_exceeded"))
            .andExpect(jsonPath("$.retryIn").value("om 42 min"));
     }
+
+    @Test
+    void versionSvararMedKodOchModellkedja() throws Exception {
+        // Provet finns av ett konkret skäl: 2026-09-17 avvecklade Groq qwen3.6-27b, som var
+        // den hardkodade fallbacken har. Bytet till 3.8 pushades — och gick INTE att
+        // verifiera i drift, for tjansten hade inget satt att saga vilken kod den korde.
+        // /api/health svarar "groq: ok", men det betyder bara att kvoten inte ar slut.
+        mvc.perform(get("/api/version"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.version").exists())
+           .andExpect(jsonPath("$.commit").exists())
+           .andExpect(jsonPath("$.branch").exists())
+           .andExpect(jsonPath("$.uptimeSeconds").exists())
+           // Modellkedjan ar poangen: ETT anrop ska svara bade "vilken kod" och "vilka modeller".
+           .andExpect(jsonPath("$.models[0]").value("openai/gpt-oss-120b"))
+           .andExpect(jsonPath("$.models[1]").value("qwen/qwen3.8-27b"));
+    }
+
+    @Test
+    void versionKraverIngenGroqkvot() throws Exception {
+        // Endpointen far inte ga genom nagot som kan vara nere: ar kvoten slut eller Groq
+        // otillgangligt ar det PRECIS da man vill kunna se vilken kod som kor.
+        when(claudeService.isQuotaExceeded()).thenReturn(true);
+
+        mvc.perform(get("/api/version"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.models[1]").value("qwen/qwen3.8-27b"));
+    }
 }
