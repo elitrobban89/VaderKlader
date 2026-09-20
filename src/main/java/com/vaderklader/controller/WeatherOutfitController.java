@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** @author Robert Andersson Kopler */
 @RestController
 @RequestMapping("/api")
 public class WeatherOutfitController {

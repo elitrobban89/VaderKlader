@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * trasigt JSON och lyckat svar. Tjänsten pekas mot en lokal stubbserver via
  * groq.api.url — inga externa anrop. Ny tjänstinstans per test (kvotspärren
  * och cachen är instanstillstånd).
+ *
+ * @author Robert Andersson Kopler
  */
 class ClaudeServiceHttpTest {
 

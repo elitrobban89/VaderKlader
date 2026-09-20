@@ -11,6 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tester för ClaudeServices rena logik: regelbaserad fallback när Groq inte
  * kan nås, cachenyckeln, 429-retry-parsning och promptbygget. Inga HTTP-anrop
  * och ingen Mockito — allt byggs med riktiga WeatherData-objekt.
+ *
+ * @author Robert Andersson Kopler
  */
 class ClaudeServiceTest {
 

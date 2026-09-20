@@ -9,6 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tester för OpenMeteoServices rena logik: parsning av Open-Meteo-svaret,
  * väderkodsmappningar och klädråd per dag. Inga HTTP-anrop — parseResponse
  * matas med ett fixtur-JSON i samma format som API:t returnerar.
+ *
+ * @author Robert Andersson Kopler
  */
 class OpenMeteoServiceTest {
 

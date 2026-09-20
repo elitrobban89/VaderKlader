@@ -2,6 +2,7 @@ package com.vaderklader.model;
 
 import java.util.List;
 
+/** @author Robert Andersson Kopler */
 public class WeatherData {
 
     public record HourlyForecast(int hoursFromNow, String icon, double temperature, int precipitationProbability, double windSpeed) {}

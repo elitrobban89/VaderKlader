@@ -2,6 +2,7 @@ package com.vaderklader.model;
 
 import java.util.List;
 
+/** @author Robert Andersson Kopler */
 public class WeatherOutfitResponse {
 
     private double lat;

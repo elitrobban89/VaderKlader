@@ -22,6 +22,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * HTTP-lagertester för WeatherOutfitController: koordinatvalidering,
  * rate limit-headers och -spärr, health med kvotstatus samt felformatet
  * vid tjänstefel. Tjänsterna mockas — inga externa anrop.
+ *
+ * @author Robert Andersson Kopler
  */
 @WebMvcTest(WeatherOutfitController.class)
 class WeatherOutfitControllerTest {

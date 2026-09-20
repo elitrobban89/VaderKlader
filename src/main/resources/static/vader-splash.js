@@ -1,3 +1,4 @@
+/* VaderKlader — (c) 2026 Robert Andersson Kopler. Alla rattigheter forbehallna. */
 // Väder & Kläder — uppstartssplash (väder-tema, glasmorfism + Groq-boot)
 // Fullskärms-takeover som visas första besöket per webbläsare. En väderscen tonar från
 // REGN → ÅSKA (blixt + gul flash) → SOL (gul glow), medan statusrader tickar igenom

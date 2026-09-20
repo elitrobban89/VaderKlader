@@ -3,7 +3,10 @@
  * Plugin Name: Väder & Kläder
  * Description: Visar väder och AI-klädförslag baserat på användarens position och färdmedel.
  * Version: 3.2
- * Author: elitrobban.se
+ * Author: Robert Andersson Kopler (elitrobban.se)
+ *
+ * Copyright (c) 2026 Robert Andersson Kopler. Alla rättigheter förbehållna.
+ * Fri att läsa och lära av, inte att sprida kommersiellt. Se README.
  */
 
 define('VADER_KLADER_API_URL', 'https://vaderklader-1.onrender.com/api/weather-outfit');
