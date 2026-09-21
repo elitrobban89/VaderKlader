@@ -16,15 +16,15 @@
   var FARDMEDEL_ROW = 5; // färdmedlen rabblas upp
 
   var ROWS = [
-    { ic: '🤖', t: 'Groq AI',       s: 'gpt-oss-120b \xb7 modell laddad', tag: 'ONLINE' },
-    { ic: '📍', t: 'GPS-position',  kind: 'gps' },
-    { ic: '🛰️', t: 'Open-Meteo',    s: 'V\xe4der-API \xb7 200 OK', tag: 'LIVE' },
-    { ic: '🌡️', t: 'V\xe4der just nu', kind: 'vader', tag: 'LIVE' },
-    { ic: '🌧️', t: 'Nederb\xf6rd',   s: 'Regn, sn\xf6 &amp; nederb\xf6rdsrisk' },
-    { ic: '🚌', t: 'F\xe4rdmedel',   kind: 'fardmedel' },
-    { ic: '🧩', t: 'Prompt',        s: 'V\xe4derkontext byggd f\xf6r AI', tag: 'OK' },
-    { ic: '⏱️', t: 'Rate-limit',    s: 'API-kvot \xb7 klar', tag: 'OK' },
-    { ic: '👕', t: 'Kl\xe4dr\xe5d',     s: 'AI-f\xf6rslag initieras…' }
+    { ic: '🤖', t: 'Groq AI',       s: 'gpt-oss-120b \xb7 modell laddad', tag: 'ONLINE', an: 'robot' },
+    { ic: '📍', t: 'GPS-position',  kind: 'gps', an: 'nal' },
+    { ic: '🛰️', t: 'Open-Meteo',    s: 'V\xe4der-API \xb7 200 OK', tag: 'LIVE', an: 'satellit' },
+    { ic: '🌡️', t: 'V\xe4der just nu', kind: 'vader', tag: 'LIVE', an: 'termo' },
+    { ic: '🌧️', t: 'Nederb\xf6rd',   s: 'Regn, sn\xf6 &amp; nederb\xf6rdsrisk', an: 'regn' },
+    { ic: '🚌', t: 'F\xe4rdmedel',   kind: 'fardmedel', an: 'buss' },
+    { ic: '🧩', t: 'Prompt',        s: 'V\xe4derkontext byggd f\xf6r AI', tag: 'OK', an: 'pussel' },
+    { ic: '⏱️', t: 'Rate-limit',    s: 'API-kvot \xb7 klar', tag: 'OK', an: 'klocka' },
+    { ic: '👕', t: 'Kl\xe4dr\xe5d',     s: 'AI-f\xf6rslag initieras…', an: 'trojan' }
   ];
 
   // Appens åtta färdmedel, i knapparnas ordning (weather-outfit-shortcode.php). Raden
@@ -219,7 +219,44 @@
       '.vksp-row.show{opacity:1;transform:translateY(0);}',
       '.vksp-row.done{border-color:rgba(52,211,153,.5);background:rgba(34,197,94,.13);',
         'box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 22px rgba(34,197,94,.2);}',
-      '.vksp-ic{font-size:1.05rem;flex-shrink:0;width:22px;text-align:center;filter:drop-shadow(0 0 5px rgba(255,196,64,.4));}',
+      '.vksp-ic{font-size:1.05rem;flex-shrink:0;width:22px;text-align:center;display:inline-block;',
+        'filter:grayscale(.75) brightness(.85) drop-shadow(0 0 5px rgba(255,196,64,.3));opacity:.8;',
+        'transition:filter .5s ease,opacity .5s ease;',
+        'animation:vksp-i-vilar 3s ease-in-out var(--ikd,0s) infinite;}',
+      // Alla ikoner rör sig: en lugn andning medan raden laddar, och en egen rörelse när den
+      // tänds. Glöden ligger i drop-shadow på spannet och inte i text-shadow — wp-emoji byter
+      // ut emojin mot en <img> på WP-sidan, och text-shadow biter inte på en bild. Bara
+      // transform/opacity animeras. --ikd förskjuter raderna så de inte andas i takt.
+      '@keyframes vksp-i-vilar{0%,100%{transform:translateY(0) scale(.96);}',
+        '50%{transform:translateY(-1.5px) scale(1);}}',
+      '.vksp-row.done .vksp-ic{opacity:1;filter:drop-shadow(0 0 7px rgba(52,211,153,.55));}',
+      // Roboten nickar till och vaknar.
+      '.vksp-row.done .vksp-i-robot{filter:drop-shadow(0 0 7px rgba(244,114,182,.6));animation:vksp-i-robot 2.8s ease-in-out var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-robot{0%,100%{transform:translateY(0) rotate(0);}18%{transform:translateY(-2px) rotate(-7deg);}36%{transform:translateY(0) rotate(6deg);}54%{transform:translateY(-1px) rotate(0);}}',
+      // Nalen slapps och studsar ner pa kartan.
+      '.vksp-row.done .vksp-i-nal{filter:drop-shadow(0 0 7px rgba(248,113,113,.7));animation:vksp-i-nal 2.4s cubic-bezier(.34,1.56,.64,1) var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-nal{0%,100%{transform:translateY(0) scale(1);}30%{transform:translateY(-5px) scale(1.06);}46%{transform:translateY(0) scale(.94);}58%{transform:translateY(-2px) scale(1.02);}}',
+      // Satelliten driver forbi i sin bana.
+      '.vksp-row.done .vksp-i-satellit{filter:drop-shadow(0 0 7px rgba(148,163,184,.65));animation:vksp-i-satellit 4s linear var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-satellit{0%{transform:rotate(-8deg) translateX(-2px);}50%{transform:rotate(8deg) translateX(2px);}100%{transform:rotate(-8deg) translateX(-2px);}}',
+      // Kvicksilvret stiger och sjunker.
+      '.vksp-row.done .vksp-i-termo{filter:drop-shadow(0 0 7px rgba(251,146,60,.7));animation:vksp-i-termo 2.6s ease-in-out var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-termo{0%,100%{transform:scaleY(.94) translateY(1px);}50%{transform:scaleY(1.08) translateY(-2px);}}',
+      // Molnet skakar av sig droppar.
+      '.vksp-row.done .vksp-i-regn{filter:drop-shadow(0 0 7px rgba(96,165,250,.7));animation:vksp-i-regn 2.2s ease-in var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-regn{0%,100%{transform:translateY(-1px) rotate(-3deg);}35%{transform:translateY(2px) rotate(3deg);}55%{transform:translateY(-1px) rotate(0);}}',
+      // Bussen gungar pa fjadringen.
+      '.vksp-row.done .vksp-i-buss{filter:drop-shadow(0 0 7px rgba(251,191,36,.7));animation:vksp-i-buss 2.4s ease-in-out var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-buss{0%,100%{transform:translateX(-2.5px) rotate(-2.5deg);}50%{transform:translateX(2.5px) rotate(2.5deg);}}',
+      // Pusselbiten vrids pa plats.
+      '.vksp-row.done .vksp-i-pussel{filter:drop-shadow(0 0 7px rgba(167,139,250,.65));animation:vksp-i-pussel 3s ease-in-out var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-pussel{0%{transform:rotate(0) scale(1);}25%{transform:rotate(-14deg) scale(1.08);}45%{transform:rotate(4deg) scale(.98);}60%{transform:rotate(0) scale(1);}80%{transform:rotate(3deg) scale(1.03);}100%{transform:rotate(0) scale(1);}}',
+      // Klockan tickar i steg, inte glidande.
+      '.vksp-row.done .vksp-i-klocka{filter:drop-shadow(0 0 7px rgba(226,232,240,.6));animation:vksp-i-klocka 2s steps(1,end) var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-klocka{0%,24%{transform:rotate(-6deg);}25%,49%{transform:rotate(0);}50%,74%{transform:rotate(6deg);}75%,100%{transform:rotate(0);}}',
+      // Trojan svajar pa galgen.
+      '.vksp-row.done .vksp-i-trojan{filter:drop-shadow(0 0 7px rgba(94,234,212,.65));animation:vksp-i-trojan 3.2s ease-in-out var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-trojan{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-1.5px);}}',
       '.vksp-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25;}',
       '.vksp-tx b{font-size:.83rem;font-weight:700;color:#eef4ff;display:flex;align-items:center;gap:7px;}',
       '.vksp-tx i{font-size:.69rem;font-style:normal;color:rgba(206,226,255,.78);',
@@ -373,7 +410,8 @@
   function rowsHtml() {
     return ROWS.map(function (r, i) {
       return '<div class="vksp-row" data-i="' + i + '">' +
-        '<span class="vksp-ic">' + r.ic + '</span>' +
+        '<span class="vksp-ic' + (r.an ? ' vksp-i-' + r.an : '') +
+          '" style="--ikd:' + (i * 0.13).toFixed(2) + 's">' + r.ic + '</span>' +
         '<span class="vksp-tx"><b>' + r.t + tagHtml(r.tag) + '</b><i class="vksp-suba">' + subFor(r) + '</i></span>' +
         '<span class="vksp-st"><span class="vksp-spin"></span></span>' +
       '</div>';
