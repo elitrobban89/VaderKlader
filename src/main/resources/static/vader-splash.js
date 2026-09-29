@@ -11,12 +11,17 @@
   var SEEN_KEY = 'vk_splash_seen_v1';
   var GPS_KEY  = 'vk_gps_position';
   var FORCE = /[?&]splash=1/.test(location.search);
-  var GPS_ROW     = 1;
-  var VADER_ROW   = 3; // väder just nu (hämtas live från Open-Meteo)
-  var FARDMEDEL_ROW = 5; // färdmedlen rabblas upp
+  var GROQ_ROW    = 0; // modellnamnet (live ur /api/system)
+  var PLATTFORM_ROW = 1; // Java- och Spring Boot-version ur den körande tjänsten
+  var GPS_ROW     = 2;
+  var VADER_ROW   = 4; // väder just nu (hämtas live från Open-Meteo)
+  var FARDMEDEL_ROW = 6; // färdmedlen rabblas upp
 
   var ROWS = [
-    { ic: '🤖', t: 'Groq AI',       s: 'gpt-oss-120b \xb7 modell laddad', tag: 'ONLINE', an: 'robot' },
+    { ic: '🤖', t: 'Groq AI',       kind: 'groq', tag: 'ONLINE', an: 'robot' },
+    // Rubriken blir "Java 27" när /api/system svarat — läst ur JVM:en, så en uppgradering
+    // till Java 28 syns utan att någon rör raden. VäderKläder har ingen databas.
+    { ic: '☕', t: 'Java', kind: 'plattform', tag: 'STARTAD', an: 'pussel' },
     { ic: '📍', t: 'GPS-position',  kind: 'gps', an: 'nal' },
     { ic: '🛰️', t: 'Open-Meteo',    s: 'V\xe4der-API \xb7 200 OK', tag: 'LIVE', an: 'satellit' },
     { ic: '🌡️', t: 'V\xe4der just nu', kind: 'vader', tag: 'LIVE', an: 'termo' },
@@ -276,6 +281,17 @@
       '.vksp-bar{position:relative;width:100%;height:6px;border-radius:6px;margin-top:18px;overflow:hidden;background:rgba(255,255,255,.08);}',
       '.vksp-fill{height:100%;width:0;border-radius:6px;',
         'background:linear-gradient(90deg,#3884ff,#a855f7,#ffc440);transition:width .55s ease;box-shadow:0 0 12px rgba(255,196,64,.55);}',
+      // Render-brickan delar rad med procenten (mobilen har ingen rad över), och loggans
+      // pil lyfter om och om igen, som en deploy.
+      '.vksp-fot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;}',
+      '.vksp-fot .vksp-pct{margin-top:0;flex-shrink:0;}',
+      '.vksp-render{display:inline-flex;align-items:center;gap:6px;min-width:0;padding:2px 9px 2px 3px;border-radius:20px;',
+        'background:rgba(139,92,246,.13);border:1px solid rgba(167,139,250,.35);font-size:.6rem;color:rgba(221,214,254,.9);white-space:nowrap;overflow:hidden;}',
+      '.vksp-render b{color:#fff;font-weight:700;}',
+      '.vksp-render i{font-style:normal;font-family:ui-monospace,Consolas,monospace;color:#c4b5fd;overflow:hidden;text-overflow:ellipsis;}',
+      '.rd-logo{display:block;flex-shrink:0;border-radius:5px;box-shadow:0 0 10px rgba(139,92,246,.55);}',
+      '.rd-pil{animation:rd-lyft 1.6s cubic-bezier(.4,0,.2,1) infinite;}',
+      '@keyframes rd-lyft{0%{transform:translateY(2px);opacity:.3;}45%{transform:translateY(-1px);opacity:1;}100%{transform:translateY(-3px);opacity:0;}}',
       '.vksp-pct{margin-top:9px;font-size:.66rem;font-weight:700;letter-spacing:.08em;color:rgba(255,217,138,.75);font-family:ui-monospace,Consolas,monospace;}',
       '.vksp.vksp-ready .vksp-boot{color:#6ee7b7;}',
       '.vksp.vksp-ready .vksp-boot .pr{color:#22c55e;}',
@@ -304,10 +320,12 @@
           'background:radial-gradient(96% 40% at 50% -14%,#fff6cf 0%,#ffd873 12%,#ffb43c 24%,',
             '#e5822c 36%,#8a4a33 54%,#2a2b46 74%,#0b1120 100%);}',
         '.vksp-card{padding:0 15px 20px;border-radius:22px;}',
-        '.vksp-stage{width:calc(100% + 30px);margin:0 -15px 6px;height:128px;border-radius:22px 22px 0 0;}',
+        '.vksp-stage{width:calc(100% + 30px);margin:0 -15px 4px;height:104px;border-radius:22px 22px 0 0;}',
         '.vksp-title{font-size:1.16rem;margin-top:13px;}',
-        '.vksp-boot{margin-bottom:14px;font-size:.72rem;}',
-        '.vksp-rows{gap:6px;}.vksp-row{padding:8px 12px;gap:10px;}',
+        '.vksp-boot{margin-bottom:10px;font-size:.72rem;}',
+        // Tio rader sedan Java-raden kom (2026-09-29): scenen och raderna stramades åt så
+        // procenten och Render-brickan ligger kvar ovanför vikkanten på en 844 px hög telefon.
+        '.vksp-rows{gap:4px;}.vksp-row{padding:6px 12px;gap:10px;}',
         '.vksp-tx b{font-size:.8rem;}.vksp-tx i{font-size:.67rem;}',
       '}',
       '@media (prefers-reduced-motion:reduce){.vksp *{animation:none!important;transition:none!important;}}'
@@ -353,6 +371,29 @@
     return s;
   }
 
+  // Plattformen ur den körande tjänsten: Java-version, Spring Boot och Groq-modellen.
+  var system = { java: '', springBoot: '', model: '' };
+  function plattformTitel() { return system.java ? 'Java ' + system.java.split('.')[0] : 'Java'; }
+  function plattformText() {
+    return system.springBoot ? '<b>Spring Boot ' + system.springBoot + '</b> \xb7 Open-Meteo \xb7 Groq' : 'JVM startad';
+  }
+  function hamtaSystem() {
+    fetch(API + '/api/system', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.java) return;
+        system.java = String(d.java);
+        system.springBoot = d.springBoot ? String(d.springBoot) : '';
+        system.model = d.model ? String(d.model) : '';
+        var dep = document.querySelector('.vksp-deploy'); if (dep) dep.textContent = deployText(d);
+        var t = document.querySelector('.vksp-row[data-i="' + PLATTFORM_ROW + '"] .vksp-t');
+        if (t) t.innerHTML = plattformTitel();
+        var p = suba(PLATTFORM_ROW); if (p) p.innerHTML = plattformText();
+        var g = suba(GROQ_ROW); if (g) g.innerHTML = subFor(ROWS[GROQ_ROW]);
+      })
+      .catch(function () {});
+  }
+
   function hamtaVader() {
     var u = 'https://api.open-meteo.com/v1/forecast?latitude=' + gpsTarget.lat.toFixed(4) +
             '&longitude=' + gpsTarget.lon.toFixed(4) +
@@ -395,10 +436,27 @@
   }
 
   function subFor(row) {
+    if (row.kind === 'groq')      return (system.model ? '<b>' + system.model + '</b>' : 'gpt-oss-120b') + ' \xb7 modell laddad';
+    if (row.kind === 'plattform') return plattformText();
     if (row.kind === 'gps')       return 'Avl\xe4ser koordinater…';
     if (row.kind === 'vader')     return vaderText();
     if (row.kind === 'fardmedel') return 'L\xe4ser in f\xe4rdmedel…';
     return row.s;
+  }
+
+  // Render-loggan: moln med en pil som lyfter — koden som åker från GitHub upp i drift.
+  // Samma märke i alla projektens splashar.
+  function renderLogo(id) {
+    return '<svg class="rd-logo" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs>' +
+      '<rect width="24" height="24" rx="6" fill="url(#' + id + ')"/>' +
+      '<path d="M7.6 17h8.8a3.1 3.1 0 0 0 .5-6.15A4.6 4.6 0 0 0 8.1 9.7 3.6 3.6 0 0 0 7.6 17Z" fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.2"/>' +
+      '<path class="rd-pil" d="M12 15.4v-4.6m0 0-2 2m2-2 2 2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+    '</svg>';
+  }
+  // "master · 9a9e5d0" när /api/system svarat från Render; innan dess vägen koden tar.
+  function deployText(d) {
+    return d && d.deployCommit ? (d.deployBranch ? d.deployBranch + ' · ' : '') + d.deployCommit : 'GitHub → master';
   }
 
   function tagHtml(tag) {
@@ -412,7 +470,8 @@
       return '<div class="vksp-row" data-i="' + i + '">' +
         '<span class="vksp-ic' + (r.an ? ' vksp-i-' + r.an : '') +
           '" style="--ikd:' + (i * 0.13).toFixed(2) + 's">' + r.ic + '</span>' +
-        '<span class="vksp-tx"><b>' + r.t + tagHtml(r.tag) + '</b><i class="vksp-suba">' + subFor(r) + '</i></span>' +
+        '<span class="vksp-tx"><b><span class="vksp-t">' + (r.kind === 'plattform' ? plattformTitel() : r.t) + '</span>' +
+          tagHtml(r.tag) + '</b><i class="vksp-suba">' + subFor(r) + '</i></span>' +
         '<span class="vksp-st"><span class="vksp-spin"></span></span>' +
       '</div>';
     }).join('');
@@ -429,7 +488,7 @@
           '<p class="vksp-boot"><span class="pr">▸</span><span class="vksp-boot-tx"></span><span class="vksp-cur"></span></p>' +
           '<div class="vksp-rows">' + rowsHtml() + '</div>' +
           '<div class="vksp-bar"><div class="vksp-fill"></div></div>' +
-          '<div class="vksp-pct">0%</div>' +
+          '<div class="vksp-fot"><span class="vksp-render">' + renderLogo('vkspRd') + '<span>Autodeploy via <b>Render</b></span><i class="vksp-deploy">' + deployText(null) + '</i></span>' + '<div class="vksp-pct">0%</div></div>' +
         '</div>' +
       '</div>';
   }
@@ -532,6 +591,7 @@
 
     overlay.querySelector('.vksp-skip').addEventListener('click', finish);
     hamtaVader();
+    hamtaSystem();
 
     if (reduce) {
       setPhase('sun', 'Sol');
