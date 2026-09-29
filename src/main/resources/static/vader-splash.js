@@ -45,7 +45,9 @@
   // är gratis, kräver ingen nyckel och tillåter anrop från webbläsaren.
   var vader = null;
 
-  var BOOT_PHRASES = ['ansluter till groq api', 'GET open-meteo /forecast → 200', 'bygger v\xe4der-prompt', 'genererar ditt kl\xe4dr\xe5d'];
+  // Bootraden nämner inga källor vid namn: Groq och Open-Meteo har egna rader nedanför, och
+  // samma namn två gånger på en skärm läser som ett fel.
+  var BOOT_PHRASES = ['startar klädrådgivaren', 'h\xe4mtar v\xe4dret f\xf6r din position', 'bygger v\xe4der-prompt', 'genererar ditt kl\xe4dr\xe5d'];
 
   // Målkoordinater: cachad GPS om den finns, annars Stockholm som default.
   var gpsTarget = readGps();
@@ -375,7 +377,8 @@
   var system = { java: '', springBoot: '', model: '' };
   function plattformTitel() { return system.java ? 'Java ' + system.java.split('.')[0] : 'Java'; }
   function plattformText() {
-    return system.springBoot ? '<b>Spring Boot ' + system.springBoot + '</b> \xb7 Open-Meteo \xb7 Groq' : 'JVM startad';
+    // Open-Meteo och Groq har egna rader — här bara plattformen, så inget står två gånger.
+    return system.springBoot ? '<b>Spring Boot ' + system.springBoot + '</b> \xb7 Docker p\xe5 Render' : 'JVM startad';
   }
   function hamtaSystem() {
     fetch(API + '/api/system', { cache: 'no-store' })
