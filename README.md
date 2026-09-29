@@ -13,7 +13,7 @@ Widgeten har en animerad rubrikrad med rullande väderikoner (☀️ 🌤️ �
 
 ## Funktioner
 
-- **Uppstartssplash** (`src/main/resources/static/vader-splash.js`, serveras från Render och auto-injiceras av WP-pluginens footer-script) — fullskärms väderscen som tonar **regn → åska → sol** medan nio statusrader tickar igenom datakällorna och tänds gröna: Groq, GPS-koordinater som räknas upp, Open-Meteo, **väder just nu** (temperatur, känns-som, vind och fukt hämtade LIVE från Open-Meteo med den cachade positionen — inte via vår egen backend, som kan sova), nederbörd, **färdmedlen som rabblas upp** ett i taget (appens åtta), prompt, rate-limit och klädråd. Solen har trettio strålar i två lager (`repeating-conic-gradient` — en vanlig `conic-gradient` ger EN stråle per lager, vilket är precis vad närbilden avslöjade) och en glöd som andas. Visas en gång per webbläsare (`localStorage`), tvinga fram med `?splash=1` eller `window.vkReplaySplash()`. Respekterar `prefers-reduced-motion`
+- **Uppstartssplash** (`src/main/resources/static/vader-splash.js`, serveras från Render och auto-injiceras av WP-pluginens footer-script) — fullskärms väderscen som tonar **regn → åska → sol** medan tio statusrader tickar igenom datakällorna och tänds gröna: Groq (modellnamnet live), **☕ Java** (versionen och Spring Boot ur den körande JVM:en via `GET /api/system`, så en uppgradering till Java 28 syns av sig själv), GPS-koordinater som räknas upp, Open-Meteo, **väder just nu** (temperatur, känns-som, vind och fukt hämtade LIVE från Open-Meteo med den cachade positionen — inte via vår egen backend, som kan sova), nederbörd, **färdmedlen som rabblas upp** ett i taget (appens åtta), prompt, rate-limit och klädråd. Solen har trettio strålar i två lager (`repeating-conic-gradient` — en vanlig `conic-gradient` ger EN stråle per lager, vilket är precis vad närbilden avslöjade) och en glöd som andas. Foten har en Render-bricka med autodeployens branch och commit. CarAdvice nattrutin kontrollerar varje natt att uppgifterna stämmer (`scripts/splash-vakt.js`). Visas en gång per webbläsare (`localStorage`), tvinga fram med `?splash=1` eller `window.vkReplaySplash()`. Respekterar `prefers-reduced-motion`
 - **Upplevd temperatur** — Open-Meteo `apparent_temperature` visas i väderkortet och skickas till AI:n för mer relevanta klädråd
 - **Prognos** — timprognos för de nästa 6 timmarna. Om regn, snö, åska eller hagel väntas visas en gul varning i väderkortet och AI:n nämner det med ungefärlig tid. Åska och hagel ger specifika råd (söka skydd, cyklister bör stanna)
 - **IP-begränsning** — max 20 förfrågningar per timme och IP-adress (sliding window, 429 vid överskridning)
@@ -93,6 +93,7 @@ GitHub Actions ([maven.yml](.github/workflows/maven.yml)) kör testerna på varj
 GET /api/weather-outfit?lat=59.33&lon=18.06&transport=cykel
 GET /api/health     -> { status, groq }  - groq: "ok" betyder att KVOTEN inte ar slut
 GET /api/version    -> { version, commit, branch, models, uptimeSeconds }
+GET /api/system     -> { java, springBoot, deployCommit, deployBranch, model }  - till splashens Java-rad
 ```
 
 **`/api/version` finns for att svara pa "hann deployen ut?" utan Render-dashboarden.** `commit` och
