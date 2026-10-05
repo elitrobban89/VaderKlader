@@ -5,7 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.vaderklader.model.WeatherData;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.time.DayOfWeek;
@@ -30,14 +30,14 @@ public class OpenMeteoService {
     private record CacheEntry(WeatherData data, long timestamp) {}
     private final Map<String, CacheEntry> weatherCache = new ConcurrentHashMap<>();
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OpenMeteoService() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);
         factory.setReadTimeout(10000);
-        this.restTemplate = new RestTemplate(factory);
+        this.restClient = RestClient.builder().requestFactory(factory).build();
     }
 
     public WeatherData getWeather(double lat, double lon) {
@@ -56,7 +56,7 @@ public class OpenMeteoService {
             return existing.data();
 
         try {
-            String json = restTemplate.getForObject(url, String.class);
+            String json = restClient.get().uri(url).retrieve().body(String.class);
             WeatherData data = parseResponse(json);
             if (weatherCache.size() > 500) weatherCache.clear();
             weatherCache.put(key, new CacheEntry(data, System.currentTimeMillis()));

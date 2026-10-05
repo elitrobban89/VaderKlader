@@ -49,13 +49,24 @@
                     <mainClass>com.vaderklader.VaderKladerApplication</mainClass>
                 </configuration>
             </plugin>
+            <!-- Mockito som javaagent i stället för att den kopplar in sig själv vid körning:
+                 JDK 21+ varnar för dynamiskt laddade agenter och kommer att stoppa dem. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.12.1</version>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
                 </configuration>
             </plugin>
         </plugins>

@@ -10,7 +10,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -54,7 +54,7 @@ public class ClaudeService {
 
     private record CacheEntry(String suggestion, long timestamp) {}
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
     private volatile long quotaExceededUntil = 0;
@@ -63,7 +63,7 @@ public class ClaudeService {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);
         factory.setReadTimeout(10000);
-        this.restTemplate = new RestTemplate(factory);
+        this.restClient = RestClient.builder().requestFactory(factory).build();
     }
 
     public String getOutfitSuggestion(WeatherData weather, String transport) {
@@ -123,13 +123,14 @@ public class ClaudeService {
         message.put("role", "user");
         message.put("content", prompt);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + apiKey);
-
-        HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(groqUrl, request, String.class);
-        JsonNode responseJson = objectMapper.readTree(response.getBody());
+        String responseBody = restClient.post()
+                .uri(groqUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + apiKey)
+                .body(objectMapper.writeValueAsString(body))
+                .retrieve()
+                .body(String.class);
+        JsonNode responseJson = objectMapper.readTree(responseBody);
         return responseJson.get("choices").get(0).get("message").get("content").asString();
     }
 
