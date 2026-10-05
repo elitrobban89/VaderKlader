@@ -1,9 +1,9 @@
 package com.vaderklader.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.vaderklader.model.WeatherData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -130,7 +130,7 @@ public class ClaudeService {
         HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
         ResponseEntity<String> response = restTemplate.postForEntity(groqUrl, request, String.class);
         JsonNode responseJson = objectMapper.readTree(response.getBody());
-        return responseJson.get("choices").get(0).get("message").get("content").asText();
+        return responseJson.get("choices").get(0).get("message").get("content").asString();
     }
 
     String buildFallbackSuggestion(WeatherData weather, String transport) {

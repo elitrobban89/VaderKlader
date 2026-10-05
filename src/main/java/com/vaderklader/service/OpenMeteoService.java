@@ -1,7 +1,7 @@
 package com.vaderklader.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.vaderklader.model.WeatherData;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -87,8 +87,8 @@ public class OpenMeteoService {
         String forecastWarning = detectForecastWarning(root);
         boolean isDark = detectIsDark(root);
 
-        String sunriseRaw = root.get("daily").get("sunrise").get(0).asText();
-        String sunsetRaw  = root.get("daily").get("sunset").get(0).asText();
+        String sunriseRaw = root.get("daily").get("sunrise").get(0).asString();
+        String sunsetRaw  = root.get("daily").get("sunset").get(0).asString();
         String sunrise = sunriseRaw.length() >= 16 ? sunriseRaw.substring(11, 16) : "";
         String sunset  = sunsetRaw.length()  >= 16 ? sunsetRaw.substring(11, 16)  : "";
 
@@ -103,7 +103,7 @@ public class OpenMeteoService {
     private List<WeatherData.HourlyForecast> extractHourlyForecast(JsonNode root) {
         List<WeatherData.HourlyForecast> result = new ArrayList<>();
         try {
-            String currentTime = root.get("current").get("time").asText();
+            String currentTime = root.get("current").get("time").asString();
             String currentHour = currentTime.substring(0, 13);
             JsonNode times  = root.get("hourly").get("time");
             JsonNode codes  = root.get("hourly").get("weather_code");
@@ -113,7 +113,7 @@ public class OpenMeteoService {
 
             int currentIndex = -1;
             for (int i = 0; i < times.size(); i++) {
-                if (times.get(i).asText().startsWith(currentHour)) {
+                if (times.get(i).asString().startsWith(currentHour)) {
                     currentIndex = i;
                     break;
                 }
@@ -144,7 +144,7 @@ public class OpenMeteoService {
 
             int days = Math.min(dates.size(), 7);
             for (int i = 0; i < days; i++) {
-                String dateStr = dates.get(i).asText();
+                String dateStr = dates.get(i).asString();
                 String dayName = i == 0 ? "Idag" : i == 1 ? "Imorgon" : toDayNameSv(dateStr);
                 int code = codes.get(i).asInt();
                 String icon = weatherCodeToIcon(code);
@@ -210,9 +210,9 @@ public class OpenMeteoService {
 
     private boolean detectIsDark(JsonNode root) {
         try {
-            String currentTime = root.get("current").get("time").asText();
-            String sunrise = root.get("daily").get("sunrise").get(0).asText();
-            String sunset  = root.get("daily").get("sunset").get(0).asText();
+            String currentTime = root.get("current").get("time").asString();
+            String sunrise = root.get("daily").get("sunrise").get(0).asString();
+            String sunset  = root.get("daily").get("sunset").get(0).asString();
             return currentTime.compareTo(sunrise) < 0 || currentTime.compareTo(sunset) > 0;
         } catch (Exception e) {
             return false;
@@ -221,14 +221,14 @@ public class OpenMeteoService {
 
     private String detectForecastWarning(JsonNode root) {
         try {
-            String currentTime = root.get("current").get("time").asText();
+            String currentTime = root.get("current").get("time").asString();
             JsonNode times = root.get("hourly").get("time");
             JsonNode codes = root.get("hourly").get("weather_code");
 
             String currentHour = currentTime.substring(0, 13);
             int currentIndex = -1;
             for (int i = 0; i < times.size(); i++) {
-                if (times.get(i).asText().startsWith(currentHour)) {
+                if (times.get(i).asString().startsWith(currentHour)) {
                     currentIndex = i;
                     break;
                 }
@@ -240,7 +240,7 @@ public class OpenMeteoService {
                 if (idx >= codes.size()) break;
                 int code = codes.get(idx).asInt();
                 if (code >= 51) {
-                    String timeStr = times.get(idx).asText();
+                    String timeStr = times.get(idx).asString();
                     int forecastHour = Integer.parseInt(timeStr.substring(11, 13));
                     String type;
                     if (code == 96 || code == 99) type = "Åska med hagel";

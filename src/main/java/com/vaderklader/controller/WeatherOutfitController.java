@@ -1,7 +1,7 @@
 package com.vaderklader.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.vaderklader.model.WeatherData;
 import com.vaderklader.model.WeatherOutfitResponse;
 import com.vaderklader.service.ClaudeService;
