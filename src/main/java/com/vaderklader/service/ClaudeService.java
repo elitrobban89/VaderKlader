@@ -131,7 +131,7 @@ public class ClaudeService {
                 .retrieve()
                 .body(String.class);
         JsonNode responseJson = objectMapper.readTree(responseBody);
-        return responseJson.get("choices").get(0).get("message").get("content").asString();
+        return responseJson.get("choices").get(0).get("message").get("content").asString("");
     }
 
     String buildFallbackSuggestion(WeatherData weather, String transport) {

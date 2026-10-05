@@ -72,14 +72,14 @@ public class OpenMeteoService {
         JsonNode root    = objectMapper.readTree(json);
         JsonNode current = root.get("current");
 
-        double temperature    = current.get("temperature_2m").asDouble();
-        double feelsLike      = current.get("apparent_temperature").asDouble();
-        double windSpeedKmh   = current.get("wind_speed_10m").asDouble();
-        int windDirDeg        = current.get("wind_direction_10m").asInt();
-        double humidity       = current.get("relative_humidity_2m").asDouble();
-        double precipitation  = current.get("precipitation").asDouble();
-        int weatherCode       = current.get("weather_code").asInt();
-        double uvIndex        = current.get("uv_index").asDouble();
+        double temperature    = current.get("temperature_2m").asDouble(0);
+        double feelsLike      = current.get("apparent_temperature").asDouble(0);
+        double windSpeedKmh   = current.get("wind_speed_10m").asDouble(0);
+        int windDirDeg        = current.get("wind_direction_10m").asInt(0);
+        double humidity       = current.get("relative_humidity_2m").asDouble(0);
+        double precipitation  = current.get("precipitation").asDouble(0);
+        int weatherCode       = current.get("weather_code").asInt(0);
+        double uvIndex        = current.get("uv_index").asDouble(0);
 
         double windSpeedMs = Math.round((windSpeedKmh / 3.6) * 10.0) / 10.0;
         String windDirection = toCardinal(windDirDeg);
@@ -87,8 +87,8 @@ public class OpenMeteoService {
         String forecastWarning = detectForecastWarning(root);
         boolean isDark = detectIsDark(root);
 
-        String sunriseRaw = root.get("daily").get("sunrise").get(0).asString();
-        String sunsetRaw  = root.get("daily").get("sunset").get(0).asString();
+        String sunriseRaw = root.get("daily").get("sunrise").get(0).asString("");
+        String sunsetRaw  = root.get("daily").get("sunset").get(0).asString("");
         String sunrise = sunriseRaw.length() >= 16 ? sunriseRaw.substring(11, 16) : "";
         String sunset  = sunsetRaw.length()  >= 16 ? sunsetRaw.substring(11, 16)  : "";
 
@@ -103,7 +103,7 @@ public class OpenMeteoService {
     private List<WeatherData.HourlyForecast> extractHourlyForecast(JsonNode root) {
         List<WeatherData.HourlyForecast> result = new ArrayList<>();
         try {
-            String currentTime = root.get("current").get("time").asString();
+            String currentTime = root.get("current").get("time").asString("");
             String currentHour = currentTime.substring(0, 13);
             JsonNode times  = root.get("hourly").get("time");
             JsonNode codes  = root.get("hourly").get("weather_code");
@@ -113,7 +113,7 @@ public class OpenMeteoService {
 
             int currentIndex = -1;
             for (int i = 0; i < times.size(); i++) {
-                if (times.get(i).asString().startsWith(currentHour)) {
+                if (times.get(i).asString("").startsWith(currentHour)) {
                     currentIndex = i;
                     break;
                 }
@@ -123,10 +123,10 @@ public class OpenMeteoService {
             for (int h = 1; h <= 6; h++) {
                 int idx = currentIndex + h;
                 if (idx >= times.size()) break;
-                int code  = codes.get(idx).asInt();
-                double temp = Math.round(temps.get(idx).asDouble() * 10.0) / 10.0;
-                int prob  = probs != null && !probs.get(idx).isNull() ? probs.get(idx).asInt() : 0;
-                double windKmh = winds != null && !winds.get(idx).isNull() ? winds.get(idx).asDouble() : 0;
+                int code  = codes.get(idx).asInt(0);
+                double temp = Math.round(temps.get(idx).asDouble(0) * 10.0) / 10.0;
+                int prob  = probs != null && !probs.get(idx).isNull() ? probs.get(idx).asInt(0) : 0;
+                double windKmh = winds != null && !winds.get(idx).isNull() ? winds.get(idx).asDouble(0) : 0;
                 double windMs = Math.round((windKmh / 3.6) * 10.0) / 10.0;
                 result.add(new WeatherData.HourlyForecast(h, weatherCodeToIcon(code), temp, prob, windMs));
             }
@@ -144,12 +144,12 @@ public class OpenMeteoService {
 
             int days = Math.min(dates.size(), 7);
             for (int i = 0; i < days; i++) {
-                String dateStr = dates.get(i).asString();
+                String dateStr = dates.get(i).asString("");
                 String dayName = i == 0 ? "Idag" : i == 1 ? "Imorgon" : toDayNameSv(dateStr);
-                int code = codes.get(i).asInt();
+                int code = codes.get(i).asInt(0);
                 String icon = weatherCodeToIcon(code);
-                double max = Math.round(maxTemps.get(i).asDouble() * 10.0) / 10.0;
-                double min = Math.round(minTemps.get(i).asDouble() * 10.0) / 10.0;
+                double max = Math.round(maxTemps.get(i).asDouble(0) * 10.0) / 10.0;
+                double min = Math.round(minTemps.get(i).asDouble(0) * 10.0) / 10.0;
                 String outfit = dailyOutfit(max, code);
                 result.add(new WeatherData.DailyForecast(dayName, icon, max, min, outfit));
             }
@@ -210,9 +210,9 @@ public class OpenMeteoService {
 
     private boolean detectIsDark(JsonNode root) {
         try {
-            String currentTime = root.get("current").get("time").asString();
-            String sunrise = root.get("daily").get("sunrise").get(0).asString();
-            String sunset  = root.get("daily").get("sunset").get(0).asString();
+            String currentTime = root.get("current").get("time").asString("");
+            String sunrise = root.get("daily").get("sunrise").get(0).asString("");
+            String sunset  = root.get("daily").get("sunset").get(0).asString("");
             return currentTime.compareTo(sunrise) < 0 || currentTime.compareTo(sunset) > 0;
         } catch (Exception e) {
             return false;
@@ -221,14 +221,14 @@ public class OpenMeteoService {
 
     private String detectForecastWarning(JsonNode root) {
         try {
-            String currentTime = root.get("current").get("time").asString();
+            String currentTime = root.get("current").get("time").asString("");
             JsonNode times = root.get("hourly").get("time");
             JsonNode codes = root.get("hourly").get("weather_code");
 
             String currentHour = currentTime.substring(0, 13);
             int currentIndex = -1;
             for (int i = 0; i < times.size(); i++) {
-                if (times.get(i).asString().startsWith(currentHour)) {
+                if (times.get(i).asString("").startsWith(currentHour)) {
                     currentIndex = i;
                     break;
                 }
@@ -238,9 +238,9 @@ public class OpenMeteoService {
             for (int h = 1; h <= 6; h++) {
                 int idx = currentIndex + h;
                 if (idx >= codes.size()) break;
-                int code = codes.get(idx).asInt();
+                int code = codes.get(idx).asInt(0);
                 if (code >= 51) {
-                    String timeStr = times.get(idx).asString();
+                    String timeStr = times.get(idx).asString("");
                     int forecastHour = Integer.parseInt(timeStr.substring(11, 13));
                     String type;
                     if (code == 96 || code == 99) type = "Åska med hagel";
