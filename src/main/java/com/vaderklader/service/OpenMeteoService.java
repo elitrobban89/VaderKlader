@@ -3,6 +3,8 @@ package com.vaderklader.service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.vaderklader.model.WeatherData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -30,10 +32,14 @@ public class OpenMeteoService {
     private record CacheEntry(WeatherData data, long timestamp) {}
     private final Map<String, CacheEntry> weatherCache = new ConcurrentHashMap<>();
 
+    private static final Logger log = LoggerFactory.getLogger(OpenMeteoService.class);
+
     private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final MetNorwayService metNorwayService;
 
-    public OpenMeteoService() {
+    public OpenMeteoService(MetNorwayService metNorwayService) {
+        this.metNorwayService = metNorwayService;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);
         factory.setReadTimeout(10000);
@@ -57,15 +63,27 @@ public class OpenMeteoService {
 
         try {
             String json = restClient.get().uri(url).retrieve().body(String.class);
-            WeatherData data = parseResponse(json);
-            if (weatherCache.size() > 500) weatherCache.clear();
-            weatherCache.put(key, new CacheEntry(data, System.currentTimeMillis()));
-            return data;
+            return cache(key, parseResponse(json));
         } catch (Exception e) {
-            CacheEntry cached = weatherCache.get(key);
-            if (cached != null) return cached.data(); // use any cached data, even stale, on error
-            throw new RuntimeException("Kunde inte hämta väderdata: " + e.getMessage());
+            // Open-Meteos dygnskvot räknas per IP, och Render delar utgående IP med andra
+            // kunder — en färsk prognos från MET Norway slår en gammal ur cachen
+            try {
+                WeatherData data = parseResponse(metNorwayService.fetchAsOpenMeteoJson(gridLat, gridLon));
+                log.warn("Open-Meteo svarade inte ({}) — vädret kom från MET Norway", e.getMessage());
+                return cache(key, data);
+            } catch (Exception metError) {
+                CacheEntry cached = weatherCache.get(key);
+                if (cached != null) return cached.data(); // use any cached data, even stale, on error
+                throw new RuntimeException("Kunde inte hämta väderdata: " + e.getMessage()
+                    + " (reserven MET Norway: " + metError.getMessage() + ")");
+            }
         }
+    }
+
+    private WeatherData cache(String key, WeatherData data) {
+        if (weatherCache.size() > 500) weatherCache.clear();
+        weatherCache.put(key, new CacheEntry(data, System.currentTimeMillis()));
+        return data;
     }
 
     WeatherData parseResponse(String json) throws Exception {

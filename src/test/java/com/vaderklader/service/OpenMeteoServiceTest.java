@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class OpenMeteoServiceTest {
 
-    private final OpenMeteoService service = new OpenMeteoService();
+    private final OpenMeteoService service = new OpenMeteoService(new MetNorwayService());
 
     // Realistiskt Open-Meteo-svar: kl 12:00, 18 km/h vind (= 5.0 m/s), regn (61) kl 14:00
     private static final String SAMPLE_JSON = """

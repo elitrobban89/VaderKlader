@@ -14,8 +14,8 @@
   var GROQ_ROW    = 0; // modellnamnet (live ur /api/system)
   var PLATTFORM_ROW = 1; // Java- och Spring Boot-version ur den körande tjänsten
   var GPS_ROW     = 2;
-  var VADER_ROW   = 4; // väder just nu (hämtas live från Open-Meteo)
-  var FARDMEDEL_ROW = 6; // färdmedlen rabblas upp
+  var VADER_ROW   = 5; // väder just nu (hämtas live från Open-Meteo)
+  var FARDMEDEL_ROW = 7; // färdmedlen rabblas upp
 
   var ROWS = [
     { ic: '🤖', t: 'Groq AI',       kind: 'groq', tag: 'ONLINE', an: 'robot' },
@@ -24,6 +24,9 @@
     { ic: '☕', t: 'Java', kind: 'plattform', tag: 'STARTAD', an: 'pussel' },
     { ic: '📍', t: 'GPS-position',  kind: 'gps', an: 'nal' },
     { ic: '🛰️', t: 'Open-Meteo',    s: 'V\xe4der-API \xb7 200 OK', tag: 'LIVE', an: 'satellit' },
+    // Backendens reserv när Open-Meteos dygnskvot är slut (Render delar utgående IP med
+    // andra kunder). Splashen själv hämtar fortfarande från Open-Meteo, från besökarens IP.
+    { ic: '🌍', t: 'MET Norway',    s: 'Reserv-API (yr.no) \xb7 redo', tag: 'RESERV', an: 'jordglob' },
     { ic: '🌡️', t: 'V\xe4der just nu', kind: 'vader', tag: 'LIVE', an: 'termo' },
     { ic: '🌧️', t: 'Nederb\xf6rd',   s: 'Regn, sn\xf6 &amp; nederb\xf6rdsrisk', an: 'regn' },
     { ic: '🚌', t: 'F\xe4rdmedel',   kind: 'fardmedel', an: 'buss' },
@@ -246,6 +249,9 @@
       // Satelliten driver forbi i sin bana.
       '.vksp-row.done .vksp-i-satellit{filter:drop-shadow(0 0 7px rgba(148,163,184,.65));animation:vksp-i-satellit 4s linear var(--ikd,0s) infinite;}',
       '@keyframes vksp-i-satellit{0%{transform:rotate(-8deg) translateX(-2px);}50%{transform:rotate(8deg) translateX(2px);}100%{transform:rotate(-8deg) translateX(-2px);}}',
+      // Jordgloben vrider sig fram och tillbaka.
+      '.vksp-row.done .vksp-i-jordglob{filter:drop-shadow(0 0 7px rgba(56,189,248,.65));animation:vksp-i-jordglob 3.4s ease-in-out var(--ikd,0s) infinite;}',
+      '@keyframes vksp-i-jordglob{0%,100%{transform:rotate(-9deg) scale(.97);}50%{transform:rotate(9deg) scale(1.04);}}',
       // Kvicksilvret stiger och sjunker.
       '.vksp-row.done .vksp-i-termo{filter:drop-shadow(0 0 7px rgba(251,146,60,.7));animation:vksp-i-termo 2.6s ease-in-out var(--ikd,0s) infinite;}',
       '@keyframes vksp-i-termo{0%,100%{transform:scaleY(.94) translateY(1px);}50%{transform:scaleY(1.08) translateY(-2px);}}',
@@ -327,6 +333,7 @@
         '.vksp-boot{margin-bottom:10px;font-size:.72rem;}',
         // Tio rader sedan Java-raden kom (2026-09-29): scenen och raderna stramades åt så
         // procenten och Render-brickan ligger kvar ovanför vikkanten på en 844 px hög telefon.
+        // Elva sedan MET Norway-raden (2026-10-05) — passaHojd skalar kortet om det inte räcker.
         '.vksp-rows{gap:4px;}.vksp-row{padding:6px 12px;gap:10px;}',
         '.vksp-tx b{font-size:.8rem;}.vksp-tx i{font-size:.67rem;}',
       '}',
@@ -655,7 +662,8 @@
 
     // STAGGER sänkt 470 → 420 när raderna blev nio: total tid före "klädråd redo" ska
     // ligga kvar där den var, annars betalar besökaren för de nya raderna i väntan.
-    var START = 420, STAGGER = 420, FLIP = 320;
+    // 420 → 380 av samma skäl när MET Norway blev elfte raden (420 + 10·380 ≈ 420 + 9·420).
+    var START = 420, STAGGER = 380, FLIP = 320;
     rows.forEach(function (row, i) {
       var appear = START + i * STAGGER;
       timers.push(setTimeout(function () {
